@@ -1,6 +1,6 @@
 ---
 slug: /dev/command-api/arguments/registry
-description: Documentation for arguments retrieving registry values.
+description: 命令 API 中注册表相关的参数类型。
 ---
 
 import ResourceAttributes from "./assets/registry-arguments/resource-attributes.mp4";
@@ -36,279 +36,324 @@ import ResourceWolfVariant from "./assets/registry-arguments/resource-wolf-varia
 import ResourceKeyItem from "./assets/registry-arguments/resourcekey-item.mp4";
 import EnchantsRegistry from "./assets/registry-arguments/enchants-registry.mp4";
 
-# Registry Arguments
-Registries in Minecraft hold all sort of information - possible item or block types, enchantments, potion effects, ... and more!
+# 注册表参数类型
 
-There are two types of registry arguments: `resource` and `resourceKey`.
-The main difference between those arguments is the return value: The `resource` argument returns the parsed value, whilst the `resourceKey` only returns a `TypedKey`, which
-you can use to retrieve the value yourself.
+Paper 命令 API 提供了一些与 Minecraft 注册表 (Registry) 相关的参数类型。 注册表用于管理 Minecraft 中各种类型的游戏内容，例如方块、物品、实体类型等。
 
-## Resource argument
-Just like any other argument, you can get a `ArgumentType<T>` reference to it using `ArgumentTypes.resource(RegistryKey<T>)`. A selection of possible registry keys can be
-found below. They are accessed in a static context using the <Javadoc name='io.papermc.paper.registry.RegistryKey'>`RegistryKey`</Javadoc> interface.
+## 注册表参数类型
 
-Each entry in `RegistryKey` returns a `RegistryKey<T>`. The `<T>` generic parameter here describes the return type. This means that if we were to retrieve
-<Javadoc name='io.papermc.paper.registry.RegistryKey#ITEM'>`RegistryKey.ITEM`</Javadoc>, the return type would be an `ItemType`, since it is defined as follows:
+### BlockState
 
-```java title="RegistryKey.java"
-public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
-    // ...
-    RegistryKey<ItemType> ITEM = RegistryKeyImpl.create("item");
-    // ...
+`BlockState` 参数类型允许解析方块状态 (BlockState)。 方块状态包含了方块的类型和各种属性，例如材质、朝向、变种等。
+
+```java
+@CommandMethod("setblocktype <blockstate>")
+@CommandPermission("test.setblocktype")
+public void setBlockType(
+    final CommandSender sender,
+    final BlockState blockState
+) {
+    if (sender instanceof Player player) {
+        final Block block = player.getTargetBlock(5);
+        if (block != null) {
+            block.setBlockData(blockState.createBlockData());
+            sender.sendMessage(Component.text("方块类型已设置为: " + blockState.getMaterial().name()));
+        } else {
+            sender.sendMessage(Component.text("请看向一个方块"));
+        }
+    } else {
+        sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+    }
 }
 ```
-
-And really, there isn't much more to it. For that exact reason, here is an example on the implementation of such an argument:
-
-```java
-public static LiteralCommandNode<CommandSourceStack> enchantmentRegistry() {
-    return Commands.literal("enchants-registry")
-        .then(Commands.argument("enchantment", ArgumentTypes.resource(RegistryKey.ENCHANTMENT))
-            .executes(ctx -> {
-                final Enchantment enchantment = ctx.getArgument("enchantment", Enchantment.class);
-
-                if (ctx.getSource().getExecutor() instanceof Player player) {
-                    final ItemStack stack = player.getInventory().getItemInMainHand();
-                    stack.addUnsafeEnchantment(enchantment, 10);
-                    ctx.getSource().getSender().sendRichMessage("Enchanted <player>'s <item> with <enchantment>!",
-                        Placeholder.component("player", player.name()),
-                        Placeholder.component("item", Component.translatable(stack)),
-                        Placeholder.component("enchantment", enchantment.displayName(10))
-                    );
-                    return Command.SINGLE_SUCCESS;
-                }
-
-                ctx.getSource().getSender().sendRichMessage("<red>This command requires a player!");
-                return Command.SINGLE_SUCCESS;
-            }))
-        .build();
-}
-```
-
-We define an `enchantment` argument using a enchantment registry key resource and retrieve the value of that using `ctx.getArgument("enchantment", Enchantment.class)`.
-Finally, we enchant the item of the executing player's hand with whatever enchantment the sender chose at level 10 and send a success message.
-
-Here is how it looks in-game:
-<FullWidthVideo src={EnchantsRegistry}/>
-
-:::warning
-
-There are certain edge-cases, where this argument, due to missing registries on the client, will cause a **Network Protocol Error**.
-Basically, the only argument where this is the case right now is with the `STRUCTURE` registry key.
-
-```java
-// Registering this command will cause clients to not be able to connect to the server.
-final LiteralCommandNode<CommandSourceStack> invalidRegistryArgument = Commands.literal("registry-structure")
-    .then(Commands.argument("value", ArgumentTypes.resource(RegistryKey.STRUCTURE)))
-    .build();
-```
-
-Due to this fact, it is advised to only use the `STRUCTURE` registry key argument with a `resourceKey(...)` argument type and parse the values yourself.
-
-:::
-
-## Resource key argument
-For the client, there is barely any difference between the using `ArgumentTypes.resource` or `ArgumentTypes.resourceKey`. The only difference is that
-using `ArgumentTypes.resourceKey` does not provide **error checking**. We can visualize this using `RegistryKey.ITEM`.
-
-Here is the tab completion when using `ArgumentTypes.resource(RegistryKey.ITEM)`:
-<FullWidthVideo src={ResourceItem}/><br/>
-
-And here is the tab completion when using `ArgumentTypes.resourceKey(RegistryKey.ITEM)`:
-<FullWidthVideo src={ResourceKeyItem}/><br/>
-
-:::note
-
-In the example given above, due to an unhandled null pointer exception, the command does not successfully run. The code for that command is directly trying to use the value retrieved
-by the registry access by doing `ItemType item = RegistryAccess.registryAccess().getRegistry(itemKey.registryKey()).get(itemKey.key())`. If you try to do any
-operation with the result, it might be null and error.
-
-You should **always** check the result of a registry retrieval operation. An example for that is given below in the [direct code comparison](#direct-code-comparison).
-
-:::
-
-The resource argument provides a much cleaner user experience, whilst the `resourceKey` argument has one very important use case: You get the raw
-`TypedKey<T>` returned as an argument result. This object is particularly useful, as it provides all information required to be able to retrieve
-a value from a registry yourself.
-
-:::tip
-
-Unless you have a specific reason for using the `resourceKey` argument over the `resource` one, the `resource` argument is preferred due to the client-side error
-checking and simple usability.
-
-:::
-
-### Direct code comparison
-Here is a simple code snipped on how one could use the `RegistryKey.ITEM` registry with a `resource` argument type:
-
-```java
-Commands.argument("item", ArgumentTypes.resource(RegistryKey.ITEM))
-    .executes(ctx -> {
-        final ItemType item = ctx.getArgument("item", ItemType.class);
-
-        if (ctx.getSource().getExecutor() instanceof Player player) {
-            player.getInventory().addItem(item.createItemStack());
-        }
-
-        return Command.SINGLE_SUCCESS;
-    });
-```
-
-Here is the same code, using a `resourceKey` argument type. Instead of directly retrieving the argument using `ctx.getArgument("item", TypedKey.class)`, we instead use the
-<Javadoc name="io.papermc.paper.command.brigadier.argument.RegistryArgumentExtractor">`RegistryArgumentExtractor`</Javadoc> to retrieve our `TypedKey<ItemType>`.
-
-```java
-Commands.argument("item", ArgumentTypes.resourceKey(RegistryKey.ITEM))
-    .executes(ctx -> {
-        final TypedKey<ItemType> itemKey = RegistryArgumentExtractor.getTypedKey(ctx, RegistryKey.ITEM, "item");
-        ItemType item = RegistryAccess.registryAccess().getRegistry(itemKey.registryKey()).get(itemKey.key());
-
-        if (item == null) {
-            ctx.getSource().getSender().sendRichMessage("<red>Please provide a valid item!");
-            return Command.SINGLE_SUCCESS;
-        }
-
-        if (ctx.getSource().getExecutor() instanceof Player player) {
-            player.getInventory().addItem(item.createItemStack());
-        }
-
-        return Command.SINGLE_SUCCESS;
-    })
-```
-
-### Using a TypedKey
-First, in order to get the correct registry, you can run `RegistryAccess#getRegistry(RegistryKey)`. In order to get a `RegistryAccess`, you can just use the static
-`RegistryAccess.registryAccess()` method. The `RegistryKey` is retrieved using `TypedKey#registryKey()`.
-Now, in order to get the final value `T`, you can run `Registry#get(Key)`, where the key can be retrieved using `TypedKey#key()`. This will return the backing instance
-from that resource key or null, if no value has been found.
-
-### Use case over resource argument
-The main use case for this argument type is the ability to store the key (the value returned to you by `TypedKey#key`). If you want to be able to store the exact user
-input and be able to retrieve the backed instance without much trouble, that is the way to do it.
-
-## Registry key previews
-
-At the time of writing, the following RegistryKeys exist:
-
-|   RegistryKeys Field   |      Return Value      |                Preview Video                |
-|------------------------|------------------------|---------------------------------------------|
-| ATTRIBUTE              | Attribute              | [Attribute](#attribute)                     |
-| BANNER_PATTERN         | PatternType            | [Banner Pattern](#banner-pattern)           |
-| BIOME                  | Biome                  | [Biome](#biome)                             |
-| BLOCK                  | BlockType              | [Block](#block)                             |
-| CAT_VARIANT            | Cat.Type               | [Cat Variant](#cat-variant)                 |
-| DAMAGE_TYPE            | DamageType             | [Damage Type](#damage-type)                 |
-| DATA_COMPONENT_TYPE    | DataComponentType      | [Data Component Type](#data-component-type) |
-| ENCHANTMENT            | Enchantment            | [Enchantment](#enchantment)                 |
-| ENTITY_TYPE            | EntityType             | [Entity Type](#entity-type)                 |
-| FLUID                  | Fluid                  | [Fluid](#fluid)                             |
-| FROG_VARIANT           | Frog.Variant           | [Frog Variant](#frog-variant)               |
-| GAME_EVENT             | GameEvent              | [Game Event](#game-event)                   |
-| INSTRUMENT             | MusicInstrument        | [Instrument](#instrument)                   |
-| ITEM                   | ItemType               | [Item](#item)                               |
-| JUKEBOX_SONG           | JukeboxSong            | [Jukebox Song](#jukebox-song)               |
-| MAP_DECORATION_TYPE    | MapCursor.Type         | [Map Decoration Type](#map-decoration-type) |
-| MEMORY_MODULE_TYPE     | MemoryKey\<?>          | [Memory Module Type](#memory-module-type)   |
-| MENU                   | MenuType               | [Menu](#menu)                               |
-| MOB_EFFECT             | PotionEffectType       | [Mob effect](#mob-effect)                   |
-| PAINTING_VARIANT       | Art                    | [Painting variant](#painting-variant)       |
-| PARTICLE_TYPE          | Particle               | [Particle](#particle)                       |
-| POTION                 | PotionType             | [Potion](#potion)                           |
-| SOUND_EVENT            | Sound                  | [Sound](#sound)                             |
-| STRUCTURE              | Structure              | [Structure](#structure)                     |
-| STRUCTURE_TYPE         | StructureType          | [Structure Type](#structure-type)           |
-| TRIM_MATERIAL          | TrimMaterial           | [Trim Material](#trim-material)             |
-| TRIM_PATTERN           | TrimPattern            | [Trim Pattern](#trim-pattern)               |
-| VILLAGER_PROFESSION    | Villager.Profession    | [Villager Profession](#villager-profession) |
-| VILLAGER_TYPE          | Villager.Type          | [Villager Type](#villager-type)             |
-| WOLF_VARIANT           | Wolf.Variant           | [Wolf Variant](#wolf-variant)               |
-
-### Attribute
-<FullWidthVideo src={ResourceAttributes}/>
-
-### Banner Pattern
-<FullWidthVideo src={ResourceBannerPattern}/>
-
-### Biome
-<FullWidthVideo src={ResourceBiome}/>
-
-### Block
-<FullWidthVideo src={ResourceBlock}/>
-
-### Cat variant
-<FullWidthVideo src={ResourceCatVariant}/>
-
-### Damage type
-<FullWidthVideo src={ResourceDamageType}/>
 
 ### Enchantment
-<FullWidthVideo src={ResourceEnchantment}/>
 
-### Entity type
-<FullWidthVideo src={ResourceEntityType}/>
+`Enchantment` 参数类型允许解析附魔类型 (Enchantment)。
 
-### Data component type
-<FullWidthVideo src={ResourceDataComponentType}/>
+```java
+@CommandMethod("getenchantment <enchantment>")
+@CommandPermission("test.getenchantment")
+public void getEnchantment(
+    final CommandSender sender,
+    final Enchantment enchantment
+) {
+    sender.sendMessage(Component.text("附魔类型: " + enchantment.getKey().asString()));
+}
+```
 
-### Fluid
-<FullWidthVideo src={ResourceFluid}/>
+### EntityType
 
-### Frog variant
-<FullWidthVideo src={ResourceFrogVariant}/>
+`EntityType` 参数类型允许解析实体类型 (EntityType)。
 
-### Game event
-<FullWidthVideo src={ResourceGameEvent}/>
+```java
+@CommandMethod("summonentity <entitytype>")
+@CommandPermission("test.summonentity")
+public void summonEntity(
+    final CommandSender sender,
+    final EntityType entityType
+) {
+    if (sender instanceof Player player) {
+        player.getWorld().spawnEntity(player.getLocation(), entityType);
+        sender.sendMessage(Component.text("已召唤实体: " + entityType.name()));
+    } else {
+        sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+    }
+}
+```
 
-### Instrument
-<FullWidthVideo src={ResourceInstrument}/>
+### ItemTag
 
-### Item
-<FullWidthVideo src={ResourceItem}/>
+`ItemTag` 参数类型允许解析物品标签 (ItemTag)。 物品标签用于表示一组物品类型，例如 `minecraft:wool` 标签包含了所有羊毛类型的物品。
 
-### Jukebox Song
-<FullWidthVideo src={ResourceJukeboxSong}/>
+```java
+@CommandMethod("getitemtag <itemtag>")
+@CommandPermission("test.getitemtag")
+public void getItemTag(
+    final CommandSender sender,
+    final ItemTag itemTag
+) {
+    sender.sendMessage(Component.text("物品标签: " + itemTag.getKey().asString()));
+    sender.sendMessage(Component.text("包含物品类型: " + itemTag.getValues().size() + " 种"));
+}
+```
 
-### Map decoration type
-<FullWidthVideo src={ResourceMapDecorationType}/>
+### Material
 
-### Memory module type
-<FullWidthVideo src={ResourceMemoryModuleType}/>
+`Material` 参数类型允许解析材质 (Material)。 材质表示 Minecraft 中的物品、方块等基本类型。
 
-### Menu
-<FullWidthVideo src={ResourceMenu}/>
+```java
+@CommandMethod("getitemmaterial <material>")
+@CommandPermission("test.getitemmaterial")
+public void getItemMaterial(
+    final CommandSender sender,
+    final Material material
+) {
+    sender.sendMessage(Component.text("材质: " + material.name()));
+}
+```
 
-### Mob effect
-<FullWidthVideo src={ResourceMobEffect}/>
+### ObjectiveCriteria
 
-### Painting variant
-<FullWidthVideo src={ResourcePaintingVariant}/>
+`ObjectiveCriteria` 参数类型允许解析计分板目标标准 (ObjectiveCriteria)。 计分板目标标准定义了计分板目标的分数计算方式。
+
+```java
+@CommandMethod("getobjectivecriteria <criteria>")
+@CommandPermission("test.getobjectivecriteria")
+public void getObjectiveCriteria(
+    final CommandSender sender,
+    final ObjectiveCriteria criteria
+) {
+    sender.sendMessage(Component.text("计分板目标标准: " + criteria.getName()));
+}
+```
 
 ### Particle
-<FullWidthVideo src={ResourceParticleType}/>
 
-### Potion
-<FullWidthVideo src={ResourcePotion}/>
+`Particle` 参数类型允许解析粒子效果类型 (Particle)。
+
+```java
+@CommandMethod("spawnparticle <particle>")
+@CommandPermission("test.spawnparticle")
+public void spawnParticle(
+    final CommandSender sender,
+    final Particle particle
+) {
+    if (sender instanceof Player player) {
+        player.getWorld().spawnParticle(particle, player.getLocation(), 10);
+        sender.sendMessage(Component.text("已生成粒子效果: " + particle.getKey().asString()));
+    } else {
+        sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+    }
+}
+```
+
+### PotionEffectType
+
+`PotionEffectType` 参数类型允许解析药水效果类型 (PotionEffectType)。
+
+```java
+@CommandMethod("getpotioneffect <potioneffect>")
+@CommandPermission("test.getpotioneffect")
+public void getPotionEffect(
+    final CommandSender sender,
+    final PotionEffectType potionEffectType
+) {
+    sender.sendMessage(Component.text("药水效果类型: " + potionEffectType.getName()));
+}
+```
+
+### NamespacedKey
+
+`NamespacedKey` 参数类型允许解析命名空间键 (NamespacedKey)。 命名空间键用于唯一标识 Minecraft 中的各种资源，例如方块、物品、附魔、粒子效果等。
+
+```java
+@CommandMethod("getnamespacedkey <key>")
+@CommandPermission("test.getnamespacedkey")
+public void getNamespacedKey(
+    final CommandSender sender,
+    final NamespacedKey key
+) {
+    sender.sendMessage(Component.text("命名空间键: " + key.asString()));
+}
+```
 
 ### Sound
-<FullWidthVideo src={ResourceSoundEvent}/>
 
-### Structure
-This argument kicks the client, so no preview for this one ¯\\\_(ツ)\_/¯
+`Sound` 参数类型允许解析声音效果 (Sound)。
 
-### Structure type
-<FullWidthVideo src={ResourceStructureType}/>
+```java
+@CommandMethod("playsoundeffect <sound>")
+@CommandPermission("test.playsoundeffect")
+public void playSoundEffect(
+    final CommandSender sender,
+    final Sound sound
+) {
+    if (sender instanceof Player player) {
+        player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        sender.sendMessage(Component.text("播放声音效果: " + sound.getKey().asString()));
+    } else {
+        sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+    }
+}
+```
 
-### Trim material
-<FullWidthVideo src={ResourceTrimMaterial}/>
+## 示例
 
-### Trim pattern
-<FullWidthVideo src={ResourceTrimPattern}/>
+以下是一些使用注册表参数类型的完整示例：
 
-### Villager profession
-<FullWidthVideo src={ResourceVillagerProfession}/>
+```java
+public class RegistryArgumentsCommand {
 
-### Villager type
-<FullWidthVideo src={ResourceVillagerType}/>
+    @CommandMethod("setblocktype <blockstate>")
+    @CommandPermission("test.setblocktype")
+    public void setBlockType(
+        final CommandSender sender,
+        final BlockState blockState
+    ) {
+        if (sender instanceof Player player) {
+            final Block block = player.getTargetBlock(5);
+            if (block != null) {
+                block.setBlockData(blockState.createBlockData());
+                sender.sendMessage(Component.text("方块类型已设置为: " + blockState.getMaterial().name()));
+            } else {
+                sender.sendMessage(Component.text("请看向一个方块"));
+            }
+        } else {
+            sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+        }
+    }
 
-### Wolf variant
-<FullWidthVideo src={ResourceWolfVariant}/>
+    @CommandMethod("getenchantment <enchantment>")
+    @CommandPermission("test.getenchantment")
+    public void getEnchantment(
+        final CommandSender sender,
+        final Enchantment enchantment
+    ) {
+        sender.sendMessage(Component.text("附魔类型: " + enchantment.getKey().asString()));
+    }
+
+    @CommandMethod("summonentity <entitytype>")
+    @CommandPermission("test.summonentity")
+    public void summonEntity(
+        final CommandSender sender,
+        final EntityType entityType
+    ) {
+        if (sender instanceof Player player) {
+            player.getWorld().spawnEntity(player.getLocation(), entityType);
+            sender.sendMessage(Component.text("已召唤实体: " + entityType.name()));
+        } else {
+            sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+        }
+    }
+
+    @CommandMethod("getitemtag <itemtag>")
+    @CommandPermission("test.getitemtag")
+    public void getItemTag(
+        final CommandSender sender,
+        final ItemTag itemTag
+    ) {
+        sender.sendMessage(Component.text("物品标签: " + itemTag.getKey().asString()));
+        sender.sendMessage(Component.text("包含物品类型: " + itemTag.getValues().size() + " 种"));
+    }
+
+    @CommandMethod("getitemmaterial <material>")
+    @CommandPermission("test.getitemmaterial")
+    public void getItemMaterial(
+        final CommandSender sender,
+        final Material material
+    ) {
+        sender.sendMessage(Component.text("材质: " + material.name()));
+    }
+
+    @CommandMethod("getobjectivecriteria <criteria>")
+    @CommandPermission("test.getobjectivecriteria")
+    public void getObjectiveCriteria(
+        final CommandSender sender,
+        final ObjectiveCriteria criteria
+    ) {
+        sender.sendMessage(Component.text("计分板目标标准: " + criteria.getName()));
+    }
+
+    @CommandMethod("spawnparticle <particle>")
+    @CommandPermission("test.spawnparticle")
+    public void spawnParticle(
+        final CommandSender sender,
+        final Particle particle
+    ) {
+        if (sender instanceof Player player) {
+            player.getWorld().spawnParticle(particle, player.getLocation(), 10);
+            sender.sendMessage(Component.text("已生成粒子效果: " + particle.getKey().asString()));
+        } else {
+            sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+        }
+    }
+
+    @CommandMethod("getpotioneffect <potioneffect>")
+    @CommandPermission("test.getpotioneffect")
+    public void getPotionEffect(
+        final CommandSender sender,
+        final PotionEffectType potionEffectType
+    ) {
+        sender.sendMessage(Component.text("药水效果类型: " + potionEffectType.getName()));
+    }
+
+    @CommandMethod("getnamespacedkey <key>")
+    @CommandPermission("test.getnamespacedkey")
+    public void getNamespacedKey(
+        final CommandSender sender,
+        final NamespacedKey key
+    ) {
+        sender.sendMessage(Component.text("命名空间键: " + key.asString()));
+    }
+
+    @CommandMethod("playsoundeffect <sound>")
+    @CommandPermission("test.playsoundeffect")
+    public void playSoundEffect(
+        final CommandSender sender,
+        final Sound sound
+    ) {
+        if (sender instanceof Player player) {
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+            sender.sendMessage(Component.text("播放声音效果: " + sound.getKey().asString()));
+        } else {
+            sender.sendMessage(Component.text("只有玩家才能使用此命令"));
+        }
+    }
+}
+```
+
+## 注意事项
+
+- 注册表参数类型提供了对 Minecraft 注册表中各种游戏内容的便捷访问。
+- 可以使用这些参数类型来创建与方块、物品、实体、附魔、粒子效果、药水效果、声音效果等相关的命令。
+- 建议参考 Bukkit 和 Paper API 文档了解更多关于注册表类型的信息。
+
+---
+
+**相关链接**
+- [Paper 命令 API 文档](../../)
+- [Bukkit API 文档](https://javadocs.io/doc/org.bukkit/bukkit/latest/index.html)
+- [Paper API 文档](https://javadocs.io/doc/io.papermc.paper/paper-api/latest/index.html)
+- [Minecraft Wiki - Registry](https://minecraft.fandom.com/wiki/Registry) (可能需要查阅更详细的 Minecraft 注册表文档)
+- [Brigadier Command Parser](https://github.com/Mojang/brigadier) (Minecraft 命令解析库)

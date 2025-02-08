@@ -4,6 +4,30 @@ title: bukkit-commands.yml
 description: bukkit-commands.yml 配置文件的详细参考文档。
 ---
 
+# Bukkit Commands Configuration
+
+import React from 'react';
+import ConfigDocBlock from '@site/src/components/config/ConfigDocBlock';
+import BukkitCommandsSpec from '!!raw-loader!@site/config-specs/paper/commands.yml';
+
+:::info
+
+以下 YAML 展示了旧版 `commands.yml` 文件的结构和默认值。
+
+点击配置项可以查看该项的详细说明。
+
+:::
+
+:::warning
+
+此旧版文件定义的命令别名不支持现代功能，例如：
+- Tab 补全
+- 权限控制
+
+:::
+
+<ConfigDocBlock data={BukkitCommandsSpec}/>
+
 # bukkit-commands.yml
 
 `bukkit-commands.yml` 文件是 Bukkit API 的命令配置文件，用于配置 Bukkit 命令相关的选项，例如命令别名、命令方块白名单等。

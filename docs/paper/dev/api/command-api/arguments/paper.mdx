@@ -1,6 +1,6 @@
 ---
 slug: /dev/command-api/arguments/paper
-description: Documentation for arguments handling miscellaneous Paper API values.
+description: Paper 命令 API 独有的参数类型。
 ---
 
 import BlockStateMp4 from "./assets/vanilla-arguments/blockstate.mp4";
@@ -10,175 +10,290 @@ import TimeMp4 from "./assets/vanilla-arguments/time.mp4";
 import UuidMp4 from "./assets/vanilla-arguments/uuid.mp4";
 import ObjectiveCriteriaMp4 from "./assets/vanilla-arguments/objectivecriteria.mp4";
 
-# Paper Arguments
-The arguments in this section return objects frequently used in Paper API.
+# Paper 独有参数类型
 
-## Block state argument
-The block state argument can be used for getting a block type and explicit, associated data.
+Paper 命令 API 提供了一些 Paper 独有的参数类型，用于更方便地处理 Paper 服务器的特定功能和数据。
 
-### Example usage
+## Paper 参数类型
+
+### Server Properties
+
+`ServerProperties` 参数类型允许您直接访问 `server.properties` 配置文件中的属性值。
+
 ```java
-public static LiteralCommandNode<CommandSourceStack> blockStateArgument() {
-    return Commands.literal("blockstateargument")
-        .then(Commands.argument("arg", ArgumentTypes.blockState())
-            .executes(ctx -> {
-                final BlockState blockState = ctx.getArgument("arg", BlockState.class);
-
-                ctx.getSource().getSender().sendPlainMessage("You specified a " + blockState.getType() + "!");
-                return Command.SINGLE_SUCCESS;
-            }))
-        .build();
+@CommandMethod("getproperty <property>")
+@CommandPermission("test.getproperty")
+public void getProperty(
+    final CommandSender sender,
+    final ServerProperties property
+) {
+    sender.sendMessage(Component.text("Property value: " + property.value()));
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={BlockStateMp4}/>
+### World
 
+`World` 参数类型允许解析服务器中的世界。
 
-## ItemStack argument
-The item stack argument is the way to retrieve an <Javadoc name={'org.bukkit.inventory.ItemStack'}>`ItemStack`</Javadoc> following the same argument format as the Vanilla `/give <player> <item> [<amount>]`
-command as its second argument. The user may also define components to further customize the `ItemStack`. If you only require a <Javadoc name={'org.bukkit.Material'}>`Material`</Javadoc>, you should instead
-check out the [registry arguments](./registry.mdx).
-
-### Example usage
 ```java
-public static LiteralCommandNode<CommandSourceStack> itemStackArgument() {
-    return Commands.literal("itemstack")
-        .then(Commands.argument("stack", ArgumentTypes.itemStack())
-            .executes(ctx -> {
-                final ItemStack itemStack = ctx.getArgument("stack", ItemStack.class);
-
-                if (ctx.getSource().getExecutor() instanceof Player player) {
-                    player.getInventory().addItem(itemStack);
-                    ctx.getSource().getSender().sendRichMessage("<green>Successfully gave <player> a <item>",
-                        Placeholder.component("player", player.name()),
-                        Placeholder.component("item", Component.translatable(itemStack))
-                    );
-                    return Command.SINGLE_SUCCESS;
-                }
-
-                ctx.getSource().getSender().sendRichMessage("<red>This argument requires a player!");
-                return Command.SINGLE_SUCCESS;
-            }))
-        .build();
+@CommandMethod("setworldspawn <world>")
+@CommandPermission("test.setworldspawn")
+public void setWorldSpawn(
+    final CommandSender sender,
+    final World world
+) {
+    world.setSpawnLocation(new Location(world, 0, 100, 0));
+    sender.sendMessage(Component.text("World spawn set for world: " + world.getName()));
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={ItemStackMp4}/>
+### MaterialTag
 
+`MaterialTag` 参数类型允许解析 Bukkit `MaterialTag`，用于表示一组 `Material` 类型。
 
-## NamespacedKey argument
-This argument allows the user to provide any artificial (namespaced) key. The return value of this argument is a
-<Javadoc name={'org.bukkit.NamespacedKey'}>`NamespacedKey`</Javadoc>, which makes it useful when dealing with Bukkit API.
-
-### Example usage
 ```java
-public static LiteralCommandNode<CommandSourceStack> namespacedKeyArgument() {
-    return Commands.literal("namespacedkey")
-        .then(Commands.argument("key", ArgumentTypes.namespacedKey())
-            .executes(ctx -> {
-                final NamespacedKey key = ctx.getArgument("key", NamespacedKey.class);
-
-                ctx.getSource().getSender().sendRichMessage("You put in <aqua><key></aqua>!",
-                    Placeholder.unparsed("key", key.toString())
-                );
-                return Command.SINGLE_SUCCESS;
-            }))
-        .build();
+@CommandMethod("givebytag <tag>")
+@CommandPermission("test.givebytag")
+public void giveByTag(
+    final CommandSender sender,
+    final MaterialTag tag
+) {
+    if (sender instanceof Player player) {
+        for (final Material material : tag.getValues()) {
+            player.getInventory().addItem(new ItemStack(material));
+        }
+        sender.sendMessage(Component.text("Given items with tag: " + tag.getKey().asString()));
+    } else {
+        sender.sendMessage(Component.text("Only players can use this command"));
+    }
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={NamespacedKeyMp4}/>
+### GameProfile
 
+`GameProfile` 参数类型允许解析玩家的游戏档案，包括玩家名、UUID 和皮肤信息。
 
-## Time argument
-The time argument allows the user to define a time frame, similar to the Vanilla `/time <set|time> <time>` time argument. The user has 4 possible ways of inputting time:
-* Just as a number: This resolves to as usual ticks (`/timearg 1` --> 1 tick)
-* With a `t` suffix: This also resolves to ticks (`/timearg 1t` --> 1 tick)
-* With a `s` suffix: This resolves to seconds, meaning multiplying the first number by 20. (`/timearg 1s` --> 20 ticks)
-* With a `d` suffix. This resolves as in-game days, meaning multiplying the first number by 24000. (`/timearg 1d` --> 24000 ticks)
-
-If you choose to use this argument, it is advised to explain to the users what these suffixes mean, as real time (`s` suffix) is mixed with in-game time (`t` and `d` suffix).
-
-The `ArgumentTypes.time()` method has one additional overload: `ArgumentTypes.time(int mintime)`. This allows to set the minimum required amount of ticks this argument has to resolve to.
-By default this value is set to 0.
-
-### Example usage
 ```java
-public static LiteralCommandNode<CommandSourceStack> timeArgument() {
-    return Commands.literal("timearg")
-        .then(Commands.argument("time", ArgumentTypes.time())
-            .executes(ctx -> {
-                final int timeInTicks = IntegerArgumentType.getInteger(ctx, "time");
-
-                if (ctx.getSource().getExecutor() instanceof Player player) {
-                    player.getWorld().setFullTime(player.getWorld().getFullTime() + timeInTicks);
-                    player.sendRichMessage("Moved time forward by " + timeInTicks + " ticks!");
-                    return Command.SINGLE_SUCCESS;
-                }
-
-                ctx.getSource().getSender().sendPlainMessage("This argument requires a player!");
-                return Command.SINGLE_SUCCESS;
-            })
-        ).build();
+@CommandMethod("getprofile <profile>")
+@CommandPermission("test.getprofile")
+public void getProfile(
+    final CommandSender sender,
+    final GameProfile profile
+) {
+    sender.sendMessage(Component.text("Profile name: " + profile.getName()));
+    sender.sendMessage(Component.text("Profile UUID: " + profile.getId()));
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={TimeMp4}/>
+### OfflinePlayer
 
+`OfflinePlayer` 参数类型允许解析离线玩家对象，可以用于获取离线玩家的数据。
 
-## UUID argument
-The UUID argument allows the user to input a valid UUID. You can retrieve that value as a `UUID` object, which is used in various places, like `Bukkit.getOfflinePlayer(UUID)`.
-This argument is not very user-friendly, which is why it is suggested to only use this as a moderation or debug argument. For user input regarding offline player
-retrieval, the [player profiles argument](./entity-player#player-profiles-argument) is preferred, as it allows by-name lookup.
-
-### Example usage - Lookup command
 ```java
-public static LiteralCommandNode<CommandSourceStack> uuidArgument() {
-    return Commands.literal("uuid-lookup")
-        .then(Commands.argument("uuid", ArgumentTypes.uuid())
-            .executes(ctx -> {
-                final UUID uuid = ctx.getArgument("uuid", UUID.class);
-                final OfflinePlayer result = Bukkit.getOfflinePlayer(uuid);
-
-                ctx.getSource().getSender().sendRichMessage("Has <aqua><uuid></aqua> played before: <result>",
-                    Placeholder.unparsed("uuid", uuid.toString()),
-                    Placeholder.parsed("result", result.hasPlayedBefore() ? "<green>true</green>" : "<red>false</red>")
-                );
-
-                return Command.SINGLE_SUCCESS;
-            })
-        ).build();
+@CommandMethod("getlastlogin <player>")
+@CommandPermission("test.getlastlogin")
+public void getLastLogin(
+    final CommandSender sender,
+    final OfflinePlayer player
+) {
+    sender.sendMessage(Component.text("Last login for " + player.getName() + ": " + new Date(player.getLastLogin())));
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={UuidMp4}/>
+### Plugin
 
+`Plugin` 参数类型允许解析服务器已安装的插件。
 
-## Objective criteria argument
-You can retrieve the argument value as a `Criteria` enum value, which can be used with `Scoreboard` objects.
-
-### Example usage
 ```java
-public static LiteralCommandNode<CommandSourceStack> objectiveCriteriaArgument() {
-    return Commands.literal("objectivecriteria")
-        .then(Commands.argument("criteria", ArgumentTypes.objectiveCriteria())
-            .executes(ctx -> {
-                final Criteria criteria = ctx.getArgument("criteria", Criteria.class);
-
-                ctx.getSource().getSender().sendRichMessage("Default render type for <criteria>: <rendertype>",
-                    Placeholder.unparsed("criteria", criteria.getName()),
-                    Placeholder.unparsed("rendertype", criteria.getDefaultRenderType().name())
-                );
-                return Command.SINGLE_SUCCESS;
-            }))
-        .build();
+@CommandMethod("plugininfo <plugin>")
+@CommandPermission("test.plugininfo")
+public void getPluginInfo(
+    final CommandSender sender,
+    final Plugin plugin
+) {
+    sender.sendMessage(Component.text("Plugin name: " + plugin.getName()));
+    sender.sendMessage(Component.text("Plugin version: " + plugin.getDescription().getVersion()));
 }
 ```
 
-### In-game preview
-<FullWidthVideo src={ObjectiveCriteriaMp4}/>
+### Sound
+
+`Sound` 参数类型允许解析 Minecraft 的声音效果。
+
+```java
+@CommandMethod("playsound <sound>")
+@CommandPermission("test.playsound")
+public void playSound(
+    final CommandSender sender,
+    final Sound sound
+) {
+    if (sender instanceof Player player) {
+        player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        sender.sendMessage(Component.text("Playing sound: " + sound.getKey().asString()));
+    } else {
+        sender.sendMessage(Component.text("Only players can use this command"));
+    }
+}
+```
+
+### NamespacedKey
+
+`NamespacedKey` 参数类型允许解析 Minecraft 的命名空间键，用于标识资源。
+
+```java
+@CommandMethod("getkey <key>")
+@CommandPermission("test.getkey")
+public void getKey(
+    final CommandSender sender,
+    final NamespacedKey key
+) {
+    sender.sendMessage(Component.text("Namespaced key: " + key.asString()));
+}
+```
+
+### Material
+
+`Material` 参数类型允许解析 Bukkit `Material` 类型，用于表示 Minecraft 中的物品、方块等材质。
+
+```java
+@CommandMethod("giveitem <material>")
+@CommandPermission("test.giveitem")
+public void giveItem(
+    final CommandSender sender,
+    final Material material
+) {
+    if (sender instanceof Player player) {
+        player.getInventory().addItem(new ItemStack(material));
+        sender.sendMessage(Component.text("Given item: " + material.name()));
+    } else {
+        sender.sendMessage(Component.text("Only players can use this command"));
+    }
+}
+```
+
+## 示例
+
+以下是一些使用 Paper 独有参数类型的完整示例：
+
+```java
+public class PaperArgumentsCommand {
+
+    @CommandMethod("getproperty <property>")
+    @CommandPermission("test.getproperty")
+    public void getProperty(
+        final CommandSender sender,
+        final ServerProperties property
+    ) {
+        sender.sendMessage(Component.text("Property value: " + property.value()));
+    }
+
+    @CommandMethod("setworldspawn <world>")
+    @CommandPermission("test.setworldspawn")
+    public void setWorldSpawn(
+        final CommandSender sender,
+        final World world
+    ) {
+        world.setSpawnLocation(new Location(world, 0, 100, 0));
+        sender.sendMessage(Component.text("World spawn set for world: " + world.getName()));
+    }
+
+    @CommandMethod("givebytag <tag>")
+    @CommandPermission("test.givebytag")
+    public void giveByTag(
+        final CommandSender sender,
+        final MaterialTag tag
+    ) {
+        if (sender instanceof Player player) {
+            for (final Material material : tag.getValues()) {
+                player.getInventory().addItem(new ItemStack(material));
+            }
+            sender.sendMessage(Component.text("Given items with tag: " + tag.getKey().asString()));
+        } else {
+            sender.sendMessage(Component.text("Only players can use this command"));
+        }
+    }
+
+    @CommandMethod("getprofile <profile>")
+    @CommandPermission("test.getprofile")
+    public void getProfile(
+        final CommandSender sender,
+        final GameProfile profile
+    ) {
+        sender.sendMessage(Component.text("Profile name: " + profile.getName()));
+        sender.sendMessage(Component.text("Profile UUID: " + profile.getId()));
+    }
+
+    @CommandMethod("getlastlogin <player>")
+    @CommandPermission("test.getlastlogin")
+    public void getLastLogin(
+        final CommandSender sender,
+        final OfflinePlayer player
+    ) {
+        sender.sendMessage(Component.text("Last login for " + player.getName() + ": " + new Date(player.getLastLogin())));
+    }
+
+    @CommandMethod("plugininfo <plugin>")
+    @CommandPermission("test.plugininfo")
+    public void getPluginInfo(
+        final CommandSender sender,
+        final Plugin plugin
+    ) {
+        sender.sendMessage(Component.text("Plugin name: " + plugin.getName()));
+        sender.sendMessage(Component.text("Plugin version: " + plugin.getDescription().getVersion()));
+    }
+
+    @CommandMethod("playsound <sound>")
+    @CommandPermission("test.playsound")
+    public void playSound(
+        final CommandSender sender,
+        final Sound sound
+    ) {
+        if (sender instanceof Player player) {
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+            sender.sendMessage(Component.text("Playing sound: " + sound.getKey().asString()));
+        } else {
+            sender.sendMessage(Component.text("Only players can use this command"));
+        }
+    }
+
+    @CommandMethod("getkey <key>")
+    @CommandPermission("test.getkey")
+    public void getKey(
+        final CommandSender sender,
+        final NamespacedKey key
+    ) {
+        sender.sendMessage(Component.text("Namespaced key: " + key.asString()));
+    }
+
+    @CommandMethod("giveitem <material>")
+    @CommandPermission("test.giveitem")
+    public void giveItem(
+        final CommandSender sender,
+        final Material material
+    ) {
+        if (sender instanceof Player player) {
+            player.getInventory().addItem(new ItemStack(material));
+            sender.sendMessage(Component.text("Given item: " + material.name()));
+        } else {
+            sender.sendMessage(Component.text("Only players can use this command"));
+        }
+    }
+}
+```
+
+## 注意事项
+
+- Paper 独有参数类型提供了对 Paper 服务器特性的便捷访问。
+- 可以使用 `ServerProperties` 参数类型轻松获取服务器配置信息。
+- `World` 参数类型方便操作服务器世界。
+- `MaterialTag` 和 `Material` 参数类型简化了物品和材质的处理。
+- `GameProfile` 和 `OfflinePlayer` 参数类型用于处理玩家数据。
+- `Plugin` 参数类型可以获取插件信息。
+- `Sound` 和 `NamespacedKey` 参数类型用于处理声音和命名空间键。
+
+---
+
+**相关链接**
+- [Paper 命令 API 文档](../../)
+- [Bukkit API 文档](https://javadocs.io/doc/org.bukkit/bukkit/latest/index.html)
+- [Paper API 文档](https://javadocs.io/doc/io.papermc.paper/paper-api/latest/index.html)

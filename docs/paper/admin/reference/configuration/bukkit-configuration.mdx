@@ -4,6 +4,22 @@ title: bukkit.yml
 description: bukkit.yml 配置文件的详细参考文档。
 ---
 
+# Bukkit Configuration
+
+import React from 'react';
+import ConfigDocBlock from '@site/src/components/config/ConfigDocBlock';
+import BukkitConfigSpec from '!!raw-loader!@site/config-specs/paper/bukkit.yml';
+
+:::info
+
+以下 YAML 展示了 `bukkit.yml` 文件的结构和默认值。
+
+点击配置项可以查看该项的详细说明。
+
+:::
+
+<ConfigDocBlock data={BukkitConfigSpec}/>
+
 # bukkit.yml
 
 `bukkit.yml` 文件是 Bukkit API 的核心配置文件，用于配置 Bukkit API 相关的各种服务器行为和功能。
@@ -142,162 +158,4 @@ messages: # 消息配置
         *   `false`: 不记录错误日志。
         *   **默认值:** `true`
 
-    *   **`settings.spam-throttle.spam-algorithm`**:  反垃圾邮件算法。用于选择反垃圾邮件算法。
-        *   `0`:  默认算法。使用默认的反垃圾邮件算法。
-        *   `1`:  严格算法。使用更严格的反垃圾邮件算法，可能会更有效地防止垃圾邮件，但也可能误伤正常玩家。
-        *   **默认值:** `0`
-
-*   **`settings.delayed-chunk-loads`**:  是否延迟区块加载。启用此项可以延迟服务器启动时的区块加载，加快服务器启动速度。
-    *   `true`:  延迟区块加载。服务器启动时将延迟加载区块，只加载必要的区块，加快启动速度。
-    *   `false`: 不延迟区块加载。服务器启动时将立即加载所有区块，启动速度较慢，但服务器启动后性能更稳定。
-    *   **默认值:** `true`
-
-*   **`settings.delayed-chunk-tasks`**:  是否延迟区块任务。启用此项可以延迟服务器启动时的区块任务执行，进一步加快服务器启动速度。
-    *   `true`:  延迟区块任务。服务器启动时将延迟执行区块任务，例如生物生成、方块更新等，进一步加快启动速度。
-    *   `false`: 不延迟区块任务。服务器启动时将立即执行所有区块任务。
-    *   **默认值:** `true`
-
-*   **`settings.region-file-cache-size`**:  区域文件缓存大小 (MB)。用于设置服务器区域文件缓存的大小。增加缓存大小可以提高区块加载速度，减少磁盘 IO。
-    *   **默认值:** `256` (MB)
-
-*   **`settings.trusted-session-sources`**:  受信任的会话来源。用于配置受信任的会话来源 IP 地址列表。在离线模式服务器中，服务器会验证玩家的会话信息，防止盗版玩家冒充正版玩家。此项配置用于指定受信任的会话来源 IP 地址，例如本地主机 `127.0.0.1` 或 `localhost`。
-    *   **默认值:**
-        ```yaml
-        - 127.0.0.1
-        - localhost
-        ```
-
-*   **`settings.keep-warm-chunks`**:  是否保持暖区块。启用此项可以在服务器启动时预加载出生点附近的区块，并保持这些区块加载在内存中，提高玩家进入服务器时的体验。
-    *   `true`:  保持暖区块。服务器启动时将预加载出生点附近的区块，并保持这些区块加载在内存中。
-    *   `false`: 不保持暖区块。
-    *   **默认值:** `false`
-
-*   **`settings.cached-chunks-persist`**:  是否持久化缓存区块。启用此项可以将缓存的区块数据持久化到磁盘，在服务器重启后可以快速加载缓存的区块数据，加快服务器启动速度。
-    *   `true`:  持久化缓存区块。服务器将缓存的区块数据持久化到磁盘。
-    *   `false`: 不持久化缓存区块。
-    *   **默认值:** `false`
-
-*   **`settings.load-permissions-yml-before-plugins`**:  是否在加载插件前加载 `permissions.yml`。启用此项可以在服务器启动时，先加载 `permissions.yml` 权限文件，再加载插件。这样可以确保插件在加载时，权限系统已经初始化完成。
-    *   `true`:  在加载插件前加载 `permissions.yml`。
-    *   `false`: 不在加载插件前加载 `permissions.yml`。
-    *   **默认值:** `true`
-
-*   **`settings.load-plugins-early`**:  提前加载的插件列表。用于配置需要在其他插件之前提前加载的插件列表。列表中的插件将在服务器启动时，在其他插件之前被加载。
-    *   **默认值:** `[]` (空列表)
-
-*   **`settings.shutdown-message`**:  服务器关闭消息。用于设置服务器关闭时，向玩家发送的关闭消息。
-    *   **默认值:** `Server is shutting down`
-
-*   **`settings.keep-alive-packet-interval`**:  Keep-Alive 数据包发送间隔 (秒)。用于设置服务器向客户端发送 Keep-Alive 数据包的间隔时间 (秒)。Keep-Alive 数据包用于检测客户端是否仍然连接，防止客户端连接超时断开。
-    *   **默认值:** `15` (秒)
-
-*   **`settings.keep-alive-packet-threshold`**:  Keep-Alive 数据包超时阈值 (秒)。用于设置客户端在多长时间内没有收到 Keep-Alive 数据包后，判定连接超时断开的时间 (秒)。
-    *   **默认值:** `300` (秒)
-
-*   **`settings.player-shuffle-percent`**:  玩家洗牌百分比。用于在多服务器环境下，实现玩家负载均衡。当玩家加入服务器时，服务器会根据此项配置的百分比概率，将玩家随机分配到不同的服务器上，实现负载均衡。
-    *   **默认值:** `0` (禁用玩家洗牌)
-
-*   **`settings.keep-spawn-loaded`**:  是否保持出生点区块加载。启用此项可以保持世界出生点附近的区块始终加载在内存中，即使没有玩家在出生点附近，也能确保出生点区域的功能正常运行，例如出生点附近的刷怪笼、农场等。
-    *   `true`:  保持出生点区块加载。
-    *   `false`: 不保持出生点区块加载。
-    *   **默认值:** `true`
-
-*   **`settings.spawn-limits`**:  生物生成限制。用于配置服务器中各种生物的最大生成数量限制，防止生物过多导致服务器卡顿。
-
-    *   **`settings.spawn-limits.monsters`**:  怪物生成数量限制。
-        *   **默认值:** `70`
-
-    *   **`settings.spawn-limits.animals`**:  动物生成数量限制。
-        *   **默认值:** `10`
-
-    *   **`settings.spawn-limits.water-animals`**:  水生动物生成数量限制。
-        *   **默认值:** `15`
-
-    *   **`settings.spawn-limits.ambient`**:  环境生物生成数量限制 (例如蝙蝠)。
-        *   **默认值:** `15`
-
-*   **`settings.chunk-gc`**:  区块垃圾回收设置。用于配置服务器区块垃圾回收机制，定期清理长时间未使用的区块，释放内存。
-
-    *   **`settings.chunk-gc.period-in-ticks`**:  垃圾回收周期 (Tick)。用于设置区块垃圾回收的周期，单位为 Tick。服务器将每隔此周期执行一次区块垃圾回收。
-        *   **默认值:** `600` (Tick, 相当于 30 秒)
-
-*   **`settings.ticks-per`**:  每 X Tick 运算设置。用于配置服务器中一些周期性运算的 Tick 间隔，例如生物生成、自动保存等。
-
-    *   **`settings.ticks-per.animal-spawns`**:  动物生成 Tick 间隔。用于设置动物生成的 Tick 间隔。数值越大，动物生成频率越低。
-        *   **默认值:** `400` (Tick, 相当于 20 秒)
-
-    *   **`settings.ticks-per.monster-spawns`**:  怪物生成 Tick 间隔。用于设置怪物生成的 Tick 间隔。数值越大，怪物生成频率越低。
-        *   **默认值:** `1` (Tick, 相当于 0.05 秒, 即每 Tick 都尝试生成怪物)
-
-    *   **`settings.ticks-per.autosave`**:  自动保存 Tick 间隔。用于设置服务器自动保存世界的 Tick 间隔。数值越大，自动保存频率越低，数据安全性风险越高。
-        *   **默认值:** `6000` (Tick, 相当于 5 分钟)
-
-*   **`settings.worlds`**:  世界配置。用于配置每个世界的单独设置。
-
-    *   **`settings.worlds.<world_name>`**:  世界名称。`<world_name>`  需要替换为实际的世界名称，例如 `world`, `world_nether`, `world_the_end`。
-
-        *   **`settings.worlds.<world_name>.max-tick-time`**:  最大 Tick 时间 (毫秒)。用于设置该世界中，方块实体和实体的最大 Tick 时间阈值。如果方块实体或实体的 Tick 耗时超过此阈值，服务器将发出警告信息。
-
-            *   **`settings.worlds.<world_name>.max-tick-time.tile`**:  方块实体最大 Tick 时间。
-                *   **默认值:** `50` (毫秒)
-
-            *   **`settings.worlds.<world_name>.max-tick-time.entity`**:  实体最大 Tick 时间。
-                *   **默认值:** `50` (毫秒)
-
-### `messages` 节点
-
-*   **`messages.restart`**:  服务器重启消息。用于设置服务器重启时，向玩家发送的重启消息。
-    *   **默认值:** `Server is restarting`
-
-*   **`messages.whitelist_reasons`**:  白名单原因消息。用于配置玩家因各种白名单原因被踢出服务器时，向玩家显示的踢出消息。
-
-    *   **`messages.whitelist_reasons.kick-banned`**:  被 ban 踢出消息。
-        *   **默认值:** `You are banned from this server!`
-
-    *   **`messages.whitelist_reasons.kick-whitelist`**:  未在白名单踢出消息。
-        *   **默认值:** `You are not whitelisted on this server!`
-
-    *   **`messages.whitelist_reasons.invalid-playername`**:  无效玩家名消息。
-        *   **默认值:** `${player} is not a valid player name`
-
-    *   **`messages.whitelist_reasons.invalid-ip`**:  无效 IP 消息。
-        *   **默认值:** `Invalid IP`
-
-    *   **`messages.whitelist_reasons.no-reason`**:  没有原因的 ban 消息。
-        *   **默认值:** `Banned by an operator. No reason given.`
-
-    *   **`messages.whitelist_reasons.generic`**:  通用错误消息。
-        *   **默认值:** `An error occurred`
-
-    *   **`messages.whitelist_reasons.outdated-server`**:  服务器版本过时消息。
-        *   **默认值:** `Outdated server! I'm still on {0}`
-
-    *   **`messages.whitelist_reasons.outdated-client`**:  客户端版本过时消息。
-        *   **默认值:** `Outdated client! Please use version {0}`
-
-    *   **`messages.whitelist_reasons.server_full`**:  服务器已满消息。
-        *   **默认值:** `The server is full!`
-
-    *   **`messages.whitelist_reasons.plugin-failure`**:  插件命令执行失败消息。
-        *   **默认值:** `Plugin failure implementing command`
-
-    *   **`messages.whitelist_reasons.invalid-arguments`**:  无效参数消息。
-        *   **默认值:** `Invalid argument`
-
-    *   **`messages.whitelist_reasons.commands`**:  命令相关消息。
-
-        *   **`messages.whitelist_reasons.commands.generic-help`**:  通用帮助消息。
-            *   **默认值:** `Help: Use /help [command] to get help`
-
-        *   **`messages.whitelist_reasons.commands.tab_complete`**:  Tab 补全提示消息。
-            *   **默认值:** `Commands available:`
-
-**注意事项:**
-
-*   修改 `bukkit.yml` 配置文件后，需要重启服务器才能使配置生效。
-*   请仔细阅读每个配置项的说明，了解配置项的作用和取值范围，避免配置错误导致服务器运行异常。
-*   部分配置项涉及到服务器性能优化，请根据您的服务器硬件配置和实际需求进行调整。
-
----
-
-**希望本参考文档能够帮助您配置 `bukkit.yml` 文件。祝您游戏愉快！**
+    *   **`
