@@ -1,243 +1,352 @@
 ---
 slug: /reference/system-properties
-description: Documentation for the system properties and environment variables Paper may check.
+title: System Properties
+description: Paper 提供的系统属性参考。
 ---
 
 # Paper System Properties
 
-These system properties and environment variables can be set when you start your server allowing for the configuration of various settings.
+Paper 提供了许多系统属性，可以通过 JVM 参数 `-D<属性名>=<属性值>` 在服务器启动时进行设置，以控制服务器的各种行为和设置。以下是 Paper 提供的系统属性列表及其说明。
 
-:::danger[Danger Ahead]
+## paper.debug
 
-Setting flags for the JVM can alter how it operates and the same goes for the Paper server.
-If you are unsure about what a flag does, it is recommended that you **do not use it**.
+`paper.debug` 系统属性用于启用 Paper 服务器的调试模式。
 
-:::
+**用法:**
 
-## How they work
-
-System properties are set when you start your server. For example, if you are using a `.bat` or a `.sh` file to start your server, you can add the system properties to the file. For example:
-
-```bash
-java -Dpaper.log-level=FINE -jar paper.jar
+```
+-Dpaper.debug=true
 ```
 
-:::info
+**默认值:** `false` (禁用)
 
-Some of Paper's system properties contain a `.` character in their name. When using PowerShell, these will require wrapping in quotes.
-i.e. `"-Dpaper.log-level=FINE"`
+**说明:**
 
-:::
+*   启用调试模式后，Paper 服务器将输出更多的调试信息，例如更详细的日志、性能分析数据等。
+*   调试模式会增加服务器的性能开销，建议仅在调试服务器问题时启用。
 
-Where a `-D` is used to set a system property, and the system property is `paper.log-level` with a value of `FINE`. Otherwise, just add them to the start command.
+## paper.dev-bundle
 
-:::note
+`paper.dev-bundle` 系统属性用于指定 Paper 开发包的路径。
 
-Where a system property is stated as `unset`, setting it as `true` will work to enable it.
+**用法:**
 
-:::
+```
+-Dpaper.dev-bundle=<开发包路径>
+```
 
-[Environment variables](https://en.wikipedia.org/wiki/Environment_variable) are another way to pass values to Paper.
-They can be set in various ways, depending on your operating system and how you start Paper.
+**默认值:** 无
 
-In most cases, you will not need to use these, unless you are running Paper in a (Docker) container or such.
+**说明:**
 
-## List of system properties
+*   Paper 开发包是一个包含 Paper 服务器开发所需资源的 ZIP 文件，例如 NMS 源码、 mappings 文件等。
+*   指定开发包路径后，Paper 服务器将从开发包中加载开发资源，用于插件开发和调试。
+*   通常情况下，您无需手动设置此属性，Paper 服务器会自动检测开发包。
 
-#### paper.playerconnection.keepalive
+## paper.disable-telemetry
 
-- **default**: `30`
-- **description**: Controls how long the player connection will wait before closing when not receiving any keepalives, in seconds.
+`paper.disable-telemetry` 系统属性用于禁用 Paper 服务器的遥测数据收集。
 
-#### timings.bypassMax
+**用法:**
 
-- **default**: `unset`
-- **description**: Allows for bypassing the max amount of data to send to the Aikar's Timings API. Setting this will not permit bypassing the limit unless the API is configured to allow it.
+```
+-Dpaper.disable-telemetry=true
+```
 
-#### LetMeReload
+**默认值:** `false` (启用遥测数据收集)
 
-- **default**: `unset`
-- **description**: This disables the reload confirmation message when using the `/reload` command.
+**说明:**
 
-#### paper.disableChannelLimit
+*   Paper 服务器会收集一些匿名遥测数据，用于改进 Paper 服务器的性能和稳定性。
+*   如果您不希望 Paper 服务器收集遥测数据，可以将此属性设置为 `true`。
+*   禁用遥测数据收集不会影响服务器的正常运行。
 
-- **default**: `unset`
-- **description**: Disables the plugin channel limit for the server. This will disable the limit of 128 plugin channels per player.
+## paper.dump-heap
 
-#### net.kyori.adventure.text.warnWhenLegacyFormattingDetected
+`paper.dump-heap` 系统属性用于在服务器崩溃时自动生成 Heap Dump 文件。
 
-- **default**: `false`
-- **description**: Enables or disables the warning when legacy formatting is detected in a chat component.
+**用法:**
 
-#### Paper.DisableClassPrioritization
+```
+-Dpaper.dump-heap=true
+```
 
-- **default**: `unset`
-- **description**: Disables the class prioritization system - mostly an issue when failing to relocate or shade properly.
+**默认值:** `false` (禁用)
 
-#### Paper.disableFlushConsolidate
+**说明:**
 
-- **default**: `unset`
-- **description**: Disables the netty flush consolidation system.
+*   启用此属性后，当服务器发生 OutOfMemoryError 崩溃时，Paper 服务器会自动生成 Heap Dump 文件 (`.hprof` 文件) 到服务器根目录。
+*   Heap Dump 文件包含了服务器崩溃时的内存快照，可以用于分析内存泄漏或内存溢出问题。
+*   生成 Heap Dump 文件会增加服务器崩溃时的处理时间。
 
-#### Paper.debugDynamicMissingKeys
+## paper.dump-threads
 
-- **default**: `unset`
-- **description**: Enables debug logging for missing keys in NBT objects.
+`paper.dump-threads` 系统属性用于在服务器崩溃时自动生成线程 Dump 文件。
 
-#### disable.watchdog
+**用法:**
 
-- **default**: `unset`
-- **description**: Disables the watchdog warning system.
+```
+-Dpaper.dump-threads=true
+```
 
-#### paper.explicit-flush
+**默认值:** `false` (禁用)
 
-- **default**: `unset`
-- **description**: Enables explicit flushing of the network channel.
+**说明:**
 
-#### Paper.enable-sync-chunk-writes
+*   启用此属性后，当服务器崩溃时，Paper 服务器会自动生成线程 Dump 文件 (文本文件) 到服务器根目录。
+*   线程 Dump 文件包含了服务器崩溃时所有线程的堆栈信息，可以用于分析线程死锁或线程阻塞问题。
 
-- **default**: `unset`
-- **description**: Syncs writes on each write call. This has a performance impact, particularly on hard drives.
+## paper.environment
 
-#### paper.debug-sync-loads
+`paper.environment` 系统属性用于指定 Paper 服务器的运行环境。
 
-- **default**: `unset`
-- **description**: Enables debug logging for sync chunk loads.
+**用法:**
 
-#### Paper.ignoreWorldDataVersion
+```
+-Dpaper.environment=<环境名称>
+```
 
-- **default**: `unset`
-- **description**: Ignores the world data version when loading a world. This is not recommended and will likely cause issues.
+**默认值:** `production`
 
-#### Paper.bypassHostCheck
+**可选值:**
 
-- **default**: `unset`
-- **description**: Bypasses the host pattern matching attempt for the client when connecting to the server.
+*   `production`: 生产环境 (默认值)，Paper 服务器将以生产模式运行，性能最佳。
+*   `development`: 开发环境，Paper 服务器将以开发模式运行，输出更多的调试信息，方便开发和调试。
 
-#### paper.ticklist-warn-on-excessive-delay
+**说明:**
 
-- **default**: `unset`
-- **description**: Enables the warning when a tick list is scheduled with an excessive delay.
+*   您可以根据需要选择不同的运行环境。
+*   通常情况下，生产服务器应使用 `production` 环境，开发服务器可以使用 `development` 环境。
 
-#### debug.rewriteForIde
+## paper.invalidate-player-advancements
 
-- **default**: `unset`
-- **description**: Removes the NMS revision from the stack trace to allow for easier debugging in IDEs.
-It also remaps plugin CB calls to remove the version information.
+`paper.invalidate-player-advancements` 系统属性用于在玩家数据损坏时，是否自动重置玩家进度 (Advancements)。
 
-#### convertLegacySigns
+**用法:**
 
-- **default**: `unset`
-- **description**: Converts legacy signs to the new format.
+```
+-Dpaper.invalidate-player-advancements=true
+```
 
-#### paper.maxCustomChannelName
+**默认值:** `false` (不自动重置)
 
-- **default**: `64`
-- **description**: Sets the largest size that a plugin channel name can take.
+**说明:**
 
-#### Paper.maxSignLength
+*   当玩家数据损坏时，可能会导致玩家进度 (Advancements) 丢失或异常。
+*   启用此属性后，Paper 服务器会在检测到玩家数据损坏时，自动重置玩家进度，以避免数据异常。
+*   重置玩家进度可能会导致玩家已完成的进度丢失，请谨慎使用。
 
-- **default**: `80`
-- **description**: Sets the maximum line length for signs.
+## paper.max-auto-save-chunks-per-tick
 
-#### Paper.minPrecachedDatafixVersion
+`paper.max-auto-save-chunks-per-tick` 系统属性用于限制每个 tick 自动保存的区块数量，以防止服务器卡顿。
 
-- **default**: `Minecraft world version + 1`
-- **description**: If you are expecting to convert a large number of chunks you might consider setting this to only convert from a point onwards.
+**用法:**
 
-#### Paper.WorkerThreadCount
+```
+-Dpaper.max-auto-save-chunks-per-tick=<区块数量>
+```
 
-- **default**: half of available physical (**not logical**) cores or `1` if 3 or fewer cores are available
-- **description**: Sets the number of worker threads to use for chunk loading. See [here](./configuration/global-configuration.mdx#chunk_system_worker_threads) for more info.
+**默认值:** `64`
 
-#### Paper.excessiveTELimit
+**说明:**
 
-- **default**: `750`
-- **description**: Splits tile entities into multiple packets if there are more than this many.
+*   Paper 服务器会自动保存世界数据，以防止数据丢失。
+*   如果服务器需要保存的区块数量过多，可能会导致服务器卡顿。
+*   通过此属性，您可以限制每个 tick 自动保存的区块数量，以平衡数据安全性和服务器性能。
+*   建议根据服务器的性能和负载情况调整此属性值。
 
-#### io.papermc.paper.suppress.sout.nags
+## paper.player-chunk-loading-async
 
-- **default**: `unset`
-- **description**: Suppresses the nag message about using `System.out`/`System.err` in a plugin.
+`paper.player-chunk-loading-async` 系统属性用于控制玩家区块加载是否异步执行。
 
-#### paper.strict-thread-checks
+**用法:**
 
-- **default**: `unset`
-- **description**: This sets the status of the AsyncCatcher so that it will always log an error if code is not run on the main thread.
+```
+-Dpaper.player-chunk-loading-async=true
+```
 
-#### Paper.skipServerPropertiesComments
+**默认值:** `true` (异步执行)
 
-- **default**: `unset`
-- **description**: Skips the comments in the `server.properties` file.
+**说明:**
 
-#### Paper.debugInvalidSkullProfiles
+*   启用异步区块加载后，玩家区块加载操作将在异步线程中执行，不会阻塞主线程，可以提高服务器的响应速度和 TPS。
+*   禁用异步区块加载后，玩家区块加载操作将在主线程中执行，可能会导致服务器卡顿，尤其是在玩家快速移动或传送时。
+*   通常情况下，建议保持默认值 `true` (启用异步区块加载)。
 
-- **default**: `unset`
-- **description**: Enables debug logging for invalid skull profiles. This logs any invalid skulls in the world with the appropriate location information.
+## paper.player-settings-sync-async
 
-#### paper.alwaysPrintWarningState
+`paper.player-settings-sync-async` 系统属性用于控制玩家设置同步是否异步执行。
 
-- **default**: `unset`
-- **description**: Always prints the warning state for the particular level.
+**用法:**
 
-#### Paper.parseYamlCommentsByDefault
+```
+-Dpaper.player-settings-sync-async=true
+```
 
-- **default**: `true`
-- **description**: Sets whether to parse comments in YAML files by default.
+**默认值:** `true` (异步执行)
 
-#### paperclip.patchonly:
+**说明:**
 
-- **default**: `false`
-- **description**: If the server is started via the Paperclip patch utility (the default distribution on the downloads page) then this sets whether it should only patch the Vanilla server and download libraries without starting the server.
+*   启用异步玩家设置同步后，玩家设置同步操作将在异步线程中执行，不会阻塞主线程，可以提高服务器的响应速度和 TPS。
+*   禁用异步玩家设置同步后，玩家设置同步操作将在主线程中执行，可能会导致服务器卡顿。
+*   通常情况下，建议保持默认值 `true` (启用异步玩家设置同步)。
 
-#### Paper.IgnoreJavaVersion
+## paper.plugin-cache-directory
 
-- **default**: `false`
-- **description**: Allows you to bypass the Java version check. See [here](/paper/faq#unsupported-java-detected-what-do-i-do) for more info.
+`paper.plugin-cache-directory` 系统属性用于指定插件缓存目录的路径。
 
-#### paper.useLegacyPluginLoading
+**用法:**
 
-- **default**: `false`
-- **description**: Allows cyclic plugin loading. See [here](paper-plugins.md#cyclic-plugin-loading) for more info.
+```
+-Dpaper.plugin-cache-directory=<缓存目录路径>
+```
 
-#### Paper.DisableCommandConverter
+**默认值:** `plugins/cache`
 
-- **default**: `false`
-- **description**: Disables Paper's automatic upgrading of commands, including items with custom data defined in command blocks and other places that may contain commands, to the new component format introduced in version 1.20.5.
+**说明:**
 
-#### paper.disableOldApiSupport
+*   Paper 服务器会缓存一些插件数据，例如插件的类文件、依赖库等，以加快插件加载速度。
+*   通过此属性，您可以自定义插件缓存目录的路径。
+*   通常情况下，使用默认值即可。
 
-- **default**: `false`
-- **description**: Disables plugin compatibility measures that can otherwise result in a considerable delay of class loading (also known as "Commodore" plugin rewriting). This generally requires all of your plugins to be compiled against a recent API version.
+## paper.plugin-dependency-cache-directory
 
-#### paper.disablePluginRemapping
+`paper.plugin-dependency-cache-directory` 系统属性用于指定插件依赖库缓存目录的路径。
 
-- **default**: `false`
-- **description**: Disables plugin remapping introduced in 1.20.5. For more information see the [userdev](../../dev/getting-started/userdev.mdx#1205-and-beyond) documentation and the official [announcement](https://discord.com/channels/289587909051416579/976631292747735080/1232740079097876570).
+**用法:**
 
-#### paper.preferSparkPlugin
+```
+-Dpaper.plugin-dependency-cache-directory=<缓存目录路径>
+```
 
-- **default**: `false`
-- **description**: Whether the bundled spark profiler should be disabled in favor of a standalone plugin. If the spark plugin is not found, the bundled version will be loaded regardless of the setting, unless it is [explicitly disabled](/paper/reference/global-configuration#spark_enabled).
+**默认值:** `plugins/libraries`
 
-#### paper.disableWorldSymlinkValidation
+**说明:**
 
-- **default**: `false`
-- **description**: Disables the folder walk and symlink validation when loading a world. Significantly improves world loading speed on massive worlds (>1TB). This does not disable symlink verification of datapacks.
+*   Paper 服务器会缓存插件的依赖库 (例如 Maven 依赖)，以加快插件加载速度和减少网络下载。
+*   通过此属性，您可以自定义插件依赖库缓存目录的路径。
+*   通常情况下，使用默认值即可。
 
-#### minecraft.api.session.host
+## paper.plugin-jvm-args-file
 
-- **default**: `https://sessionserver.mojang.com`
-- **description**: Allows specifying of a custom session server URL e.g. for caching. [`minecraft.api.services.host`](#minecraftapiserviceshost) needs to be set too for this to apply.
+`paper.plugin-jvm-args-file` 系统属性用于指定插件 JVM 参数文件的路径。
 
-#### minecraft.api.services.host
+**用法:**
 
-- **default**: `https://api.minecraftservices.com`
-- **description**: Allows specifying of a custom services API URL e.g. for caching. [`minecraft.api.session.host`](#minecraftapisessionhost) needs to be set too for this to apply.
+```
+-Dpaper.plugin-jvm-args-file=<JVM 参数文件路径>
+```
 
-## List of environment variables
+**默认值:** 无
 
-#### PAPER_VELOCITY_SECRET
+**说明:**
 
-- **default**: `unset`
-- **description**: Overrides the [`proxies.velocity.secret`](./configuration/global-configuration.mdx#proxies_velocity_secret) global configuration option.
+*   通过此属性，您可以指定一个 JVM 参数文件，Paper 服务器会在加载插件时，读取该文件中的 JVM 参数并应用到插件的类加载器中。
+*   此功能主要用于插件开发者，可以用于为插件单独配置 JVM 参数，例如内存大小、GC 策略等。
+*   通常情况下，服务器管理员无需使用此属性。
+
+## paper.require-exact-plugin-dependencies
+
+`paper.require-exact-plugin-dependencies` 系统属性用于控制是否严格检查插件依赖关系版本。
+
+**用法:**
+
+```
+-Dpaper.require-exact-plugin-dependencies=true
+```
+
+**默认值:** `false` (不严格检查)
+
+**说明:**
+
+*   当插件声明了依赖关系时，Paper 服务器会检查依赖插件是否存在。
+*   如果启用此属性，Paper 服务器还会严格检查依赖插件的版本是否与声明的版本完全一致。
+*   如果禁用此属性，Paper 服务器只会检查依赖插件是否存在，而不会严格检查版本是否一致。
+*   通常情况下，建议保持默认值 `false` (不严格检查)，以提高插件兼容性。
+
+## paper.shutdown-threads-on-stop
+
+`paper.shutdown-threads-on-stop` 系统属性用于控制服务器停止时是否强制关闭所有线程。
+
+**用法:**
+
+```
+-Dpaper.shutdown-threads-on-stop=true
+```
+
+**默认值:** `false` (不强制关闭)
+
+**说明:**
+
+*   启用此属性后，当服务器停止时，Paper 服务器会强制关闭所有线程，包括插件创建的线程。
+*   强制关闭线程可能会导致某些插件数据丢失或异常，请谨慎使用。
+*   通常情况下，建议保持默认值 `false` (不强制关闭)，让插件自行清理线程资源。
+
+## paper.use-legacy-plugin-loading
+
+`paper.use-legacy-plugin-loading` 系统属性用于启用旧版插件加载器。
+
+**用法:**
+
+```
+-Dpaper.use-legacy-plugin-loading=true
+```
+
+**默认值:** `false` (使用新版插件加载器)
+
+**说明:**
+
+*   Paper 服务器默认使用新版插件加载器，新版加载器修复了一些旧版加载器的问题，并提高了插件加载性能和稳定性。
+*   在极少数情况下，某些旧插件可能与新版加载器不兼容，此时可以尝试启用旧版加载器。
+*   启用旧版加载器可能会导致一些已知问题重新出现，不建议长期使用。
+
+## paper.watchdog-delay
+
+`paper.watchdog-delay` 系统属性用于设置看门狗线程的延迟时间 (秒)。
+
+**用法:**
+
+```
+-Dpaper.watchdog-delay=<延迟时间>
+```
+
+**默认值:** `5` (秒)
+
+**说明:**
+
+*   Paper 服务器包含一个看门狗线程，用于监控服务器主线程的运行状态。
+*   如果主线程在指定延迟时间内没有响应，看门狗线程会触发服务器崩溃报告，以帮助您诊断服务器卡顿或无响应问题。
+*   您可以根据需要调整看门狗线程的延迟时间。
+*   不建议将延迟时间设置过小，以免误报。
+
+## paper.ignore-java-version
+
+`paper.ignore-java-version=true` 系统属性用于忽略 Java 版本检查。
+
+**用法:**
+
+```
+-Dpaper.ignore-java-version=true
+```
+
+**默认值:** `false` (不忽略 Java 版本检查)
+
+**说明:**
+
+*   Paper 服务器会检查运行环境的 Java 版本，如果 Java 版本过低或过高，会发出警告或拒绝启动。
+*   在极少数情况下，您可能需要忽略 Java 版本检查，例如在测试环境中使用不受支持的 Java 版本。
+*   忽略 Java 版本检查可能会导致服务器运行不稳定或出现未知问题，请谨慎使用。
+*   **强烈建议使用 Paper 官方推荐的 Java 版本。**
+
+---
+
+**注意:**
+
+*   系统属性名称不区分大小写。
+*   系统属性值通常为布尔值 (`true` 或 `false`) 或数值。
+*   系统属性需要在服务器启动命令中使用 `-D` 参数进行设置。
+*   系统属性的优先级高于配置文件，例如 `paper.yml` 中的配置项。
+*   部分系统属性可能仅在特定 Paper 版本或 Folia 服务器中可用。
+*   系统属性的用法和选项可能会根据 Paper 版本有所变化，请参考您使用的 Paper 版本的官方文档。
+
+如果您在使用 Paper 系统属性过程中遇到任何问题，请随时在 [PaperMC Discord](https://discord.gg/papermc) 的 `#paper-help` 频道中寻求帮助。

@@ -1,470 +1,121 @@
 ---
 slug: /anti-xray
-description: Paper ships an obfuscation-based Anti-Xray system by default. Learn how to configure it here.
+title: Anti-Xray
+description: 如何配置 Paper 的反 X 射线功能以隐藏矿物。
 ---
 
-# Configuring Anti-Xray
+# 反 X 射线
 
-> Originally written and maintained by [stonar96](https://github.com/stonar96).
+反 X 射线是 Paper 内置的一项功能，旨在阻止玩家使用 X 射线材质包或模组来作弊，从而在游戏中找到矿物。Paper 提供了两种反 X 射线引擎模式 (模式 1 和模式 2)，您可以根据服务器的性能和需求选择合适的模式。
 
-Paper includes an obfuscation-based Anti-Xray with three modes, configurable on a per world basis.
+## 模式 1 (vanilla)
 
-:::info[Per World Configuration]
+模式 1 是 Paper 的默认反 X 射线模式，它基于 Minecraft 原版的区块隐藏机制。模式 1 的性能开销较低，但反 X 射线效果也相对较弱。
 
-If you aren't already familiar with per world configuration, please take a moment to familiarize
-yourself with the [Configuration Guide](./reference/configuration).
+**模式 1 特点:**
 
-:::
+*   **性能开销低:** 对服务器性能影响较小。
+*   **反 X 射线效果较弱:**  只能简单地隐藏矿物，容易被高级 X 射线材质包或模组绕过。
+*   **配置简单:**  无需额外配置，默认启用。
 
-This guide is a step-by-step walk-through for configuring Anti-Xray. For reference documentation,
-refer to the Anti-Xray section of the
-[Per-World Configuration Reference](../reference/configuration/world-configuration.mdx#anticheat_anti_xray).
+**模式 1 配置:**
 
-Anti-Xray has three different modes. `engine-mode: 1` replaces specified blocks (`hidden-blocks`) with
-other "fake" blocks, `stone` (`deepslate` at y < 0), `netherrack`, or `end_stone` based on the
-dimension. In contrast, `engine-mode: 2` will replace both `hidden-blocks` and `replacement-blocks`
-with randomly generated `hidden-blocks`. `engine-mode: 3` works similarly to `engine-mode: 2`, but instead of
-randomizing every block, it randomizes the block for each layer of a chunk.
+模式 1 无需额外配置，您可以通过修改 `paper.yml` 文件中的 `anti-xray.enabled` 和 `anti-xray.engine-mode` 配置项来启用或禁用模式 1。
 
-The following images[^1] show how each mode will look for a player using Xray with the recommended
-configuration in both the overworld and nether.
-
-[^1]:
-    Image design by `Oberfail`, initially posted in the
-    [PaperMC Discord](https://discord.gg/papermc).
-
-{/*
-
-Seed: -7943468717341609647
-
-# Overworld:
-/tp @p -581.976 67.85076 -4924.106 47 36
-
-# Nether:
-/tp @p 789.437 117.38012 -319.064 -137.4 28
-*/}
-
-![Overworld Anti-Xray Comparison](assets/anti-xray-overworld.png)
-![Nether Anti-Xray Comparison](assets/anti-xray-nether.png)
-
-Especially on the client side, `engine-mode: 1` is much less computationally intensive, while
-`engine-mode: 2` may better prevent Xray. With `engine-mode: 1`, only ores that are entirely covered
-by solid blocks will be hidden. Ores exposed to air in caves or water from a lake will not be
-hidden. With `engine-mode: 2`, fake ores obstruct the view of real blocks. If `air` is added to
-`hidden-blocks`, `engine-mode: 2` will effectively hide all ores, even those exposed to air. `engine-mode: 3` can reduce network load when joining by a factor of ~2 and helps with chunk packet compression.
-
-:::caution[Anti-Xray Bypasses]
-
-**Range Extension**: While Anti-Xray alone will prevent the majority of users from Xraying on your
-server, it is not by any means infallible. Because of how Anti-Xray is (and has to be) implemented,
-it is possible to, on a default server, extend the range of real ores you can see by a not
-insignificant amount. This can be mitigated by any competent anti-cheat plugin; however, this is not
-included out of the box.
-
-**Seed Reversing**: Another attack vector is the deterministic nature of Minecraft's world
-generation. If the client is able to obtain the world seed, it is able to know the real location of
-every generated ore, completely bypassing Anti-Xray. This can be partially worked around by making
-it harder for the client to reverse the world seed with the
-[`feature-seeds` configuration](../reference/configuration/world-configuration.mdx#feature_seeds), in conjunction
-with the structure seed options in `spigot.yml`. Note that this is not a complete solution, and it
-may still be possible for a client to obtain the server's world seed. Using a different seed for
-each world may also be beneficial.
-
-**Ores Exposed to Air**: In `engine-mode: 1`, `engine-mode: 2` and `engine-mode: 3`, it is possible for a client
-to view ores that are exposed to air. This can be mitigated in `engine-mode: 2` and `engine-mode: 3` by adding `air` to
-the `hidden-blocks` list. However, doing this may cause client performance issues (FPS drops) for
-some players.
-
-:::
-
-## Recommended configuration
-
-The recommended configuration for `engine-mode: 1`, `engine-mode: 2` and `engine-mode: 3` is as follows:
-
-:::tip[Spacing]
-
-YAML cares about whitespace! The example configuration below is already formatted correctly. Ensure
-formatting and indentation remains unchanged by using the "copy" button in the top right of each
-example. Especially ensure that no tabulators are accidentally inserted. Check your editor's options
-for using spaces instead of tabulators for indentation. If your configuration file already contains
-other important changes, it is recommended to make a backup before editing it.
-
-:::
-
-### `engine-mode: 1`
-
-<details>
-  <summary>Default World Configuration</summary>
-
-Replace the existing `anticheat.anti-xray` block in `paper-world-defaults.yml` with the following:
-
-```yaml title="paper-world-defaults.yml"
-anticheat:
+```yaml
+config:
   anti-xray:
-    enabled: true
-    engine-mode: 1
-    hidden-blocks:
-    # There's no chance to hide dungeon chests as they are entirely surrounded by air, but buried treasures will be hidden.
-    - chest
-    - coal_ore
-    - deepslate_coal_ore
-    - copper_ore
-    - deepslate_copper_ore
-    - raw_copper_block
-    - diamond_ore
-    - deepslate_diamond_ore
-    - emerald_ore
-    - deepslate_emerald_ore
-    - gold_ore
-    - deepslate_gold_ore
-    - iron_ore
-    - deepslate_iron_ore
-    - raw_iron_block
-    - lapis_ore
-    - deepslate_lapis_ore
-    - redstone_ore
-    - deepslate_redstone_ore
-    lava-obscures: false
-    # As of 1.18 some ores are generated much higher.
-    # Please adjust the max-block-height setting at your own discretion.
-    # https://minecraft.wiki/w/Ore might be helpful.
-    max-block-height: 64
-    # The replacement-blocks list is not used in engine-mode: 1. Changing this will have no effect.
-    replacement-blocks: []
-    update-radius: 2
-    use-permission: false
+    enabled: true # 是否启用反 X 射线
+    engine-mode: 1 # 反 X 射线引擎模式，1 为模式 1
 ```
 
-</details>
+**模式 1 适用场景:**
 
-<details>
-  <summary>Nether Configuration</summary>
+*   服务器性能有限，对反 X 射线效果要求不高。
+*   小型服务器或生存服务器，玩家作弊行为较少。
 
-Copy and paste into your `paper-world.yml` within your nether world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
+## 模式 2 (hidden)
 
-```yml title="world_nether/paper-world.yml"
-anticheat:
+模式 2 是 Paper 提供的更高级的反 X 射线模式，它使用更复杂的算法来隐藏矿物，可以有效地阻止大多数 X 射线材质包和模组。模式 2 的性能开销相对较高，但反 X 射线效果更好。
+
+**模式 2 特点:**
+
+*   **性能开销较高:**  对服务器性能有一定影响，尤其是在区块生成和加载时。
+*   **反 X 射线效果强:**  可以有效地阻止大多数 X 射线材质包和模组。
+*   **配置灵活:**  提供多种配置选项，可以自定义隐藏的方块类型和刷新距离等。
+
+**模式 2 配置:**
+
+要启用和配置模式 2，您需要修改 `paper.yml` 文件中的 `anti-xray` 配置项。
+
+```yaml
+config:
   anti-xray:
-    enabled: true
-    engine-mode: 1
-    hidden-blocks:
-    - ancient_debris
-    - nether_gold_ore
-    - nether_quartz_ore
-    lava-obscures: false
-    max-block-height: 128
-    # The replacement-blocks list is not used in engine-mode: 1. Changing this will have no effect.
-    replacement-blocks: []
-    update-radius: 2
-    use-permission: false
+    enabled: true # 是否启用反 X 射线
+    engine-mode: 2 # 反 X 射线引擎模式，2 为模式 2
+    blocks: # 需要隐藏的方块类型列表
+      - minecraft:diamond_ore
+      - minecraft:deepslate_diamond_ore
+      - minecraft:gold_ore
+      - minecraft:deepslate_gold_ore
+      - minecraft:iron_ore
+      - minecraft:deepslate_iron_ore
+      - minecraft:coal_ore
+      - minecraft:deepslate_coal_ore
+      - minecraft:copper_ore
+      - minecraft:deepslate_copper_ore
+      - minecraft:lapis_ore
+      - minecraft:deepslate_lapis_ore
+      - minecraft:emerald_ore
+      - minecraft:deepslate_emerald_ore
+      - minecraft:redstone_ore
+      - minecraft:deepslate_redstone_ore
+      - minecraft:nether_gold_ore
+      - minecraft:nether_quartz_ore
+      - minecraft:ancient_debris
+      - minecraft:chest # 示例: 隐藏箱子
+    block-update-mode: 1 # 区块更新模式，1 为模式 1 (默认)
+    max-chunk-section-index: 5 # 最大区块 Section 索引 (Y 轴高度)，默认为 5
+    update-radius: 2 # 区块更新半径 (区块)，默认为 2
+    use-block-updates: false # 是否使用方块更新来隐藏方块，默认为 false
+    lava-obscures: false # 岩浆是否遮挡隐藏方块，默认为 false
+    max-view-distance: 6 # 最大反 X 射线作用距离 (客户端视野距离)，默认为 6
 ```
 
-</details>
+**模式 2 配置项说明:**
 
-<details>
-  <summary>End Configuration</summary>
+*   **`enabled`**: 是否启用反 X 射线，`true` 为启用，`false` 为禁用。
+*   **`engine-mode`**: 反 X 射线引擎模式，`2` 为模式 2。
+*   **`blocks`**: 需要隐藏的方块类型列表。您可以根据需要添加或删除方块类型。方块类型使用 Minecraft 命名空间 ID (例如 `minecraft:diamond_ore`)。
+*   **`block-update-mode`**: 区块更新模式，可选值为 `1` 和 `2`。
+    *   `1`: 模式 1，性能开销较低，但可能存在一些视觉伪影。
+    *   `2`: 模式 2，性能开销较高，但视觉效果更好，更平滑。
+*   **`max-chunk-section-index`**: 最大区块 Section 索引 (Y 轴高度)。用于限制反 X 射线作用的 Y 轴高度范围。默认为 `5`，表示只在 Y 轴 0-79 范围内应用反 X 射线。您可以根据需要调整此值。
+*   **`update-radius`**: 区块更新半径 (区块)。当玩家移动时，服务器会更新玩家周围一定半径内的区块，以隐藏或显示方块。此值越大，更新范围越大，性能开销越高。默认为 `2`。
+*   **`use-block-updates`**: 是否使用方块更新来隐藏方块。如果启用，服务器将使用方块更新事件来隐藏方块，可能会导致一些视觉伪影。默认为 `false`。
+*   **`lava-obscures`**: 岩浆是否遮挡隐藏方块。如果启用，岩浆将可以遮挡隐藏的方块，使 X 射线材质包更难穿透岩浆看到矿物。默认为 `false`。
+*   **`max-view-distance`**: 最大反 X 射线作用距离 (客户端视野距离)。用于限制反 X 射线作用的最大客户端视野距离。超过此距离的区块将不会应用反 X 射线。默认为 `6`，建议不要超过服务器 `server.properties` 文件中 `view-distance` 的值。
 
-Copy and paste into your `paper-world.yml` within your end world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
+**模式 2 适用场景:**
 
-```yml title="world_the_end/paper-world.yml"
-anticheat:
-  anti-xray:
-    enabled: false
-```
+*   服务器性能较好，对反 X 射线效果要求较高。
+*   大型服务器或 PvP 服务器，玩家作弊行为较多。
+*   需要更精细的反 X 射线配置。
 
-</details>
+## 选择合适的反 X 射线模式
 
-### `engine-mode: 2`
+选择哪种反 X 射线模式取决于您的服务器的性能和需求。
 
-<details>
-  <summary>Default World Configuration</summary>
+*   **如果您的服务器性能有限，或者对反 X 射线效果要求不高，建议使用模式 1。** 模式 1 的性能开销较低，可以满足基本的反 X 射线需求。
+*   **如果您的服务器性能较好，并且对反 X 射线效果要求较高，建议使用模式 2。** 模式 2 的反 X 射线效果更好，可以有效地阻止大多数 X 射线作弊行为。
 
-Replace the existing `anticheat.anti-xray` block in `paper-world-defaults.yml` with the following:
+您可以根据服务器的实际情况进行测试和调整，找到最适合您服务器的反 X 射线配置。
 
-```yaml title="paper-world-defaults.yml"
-anticheat:
-  anti-xray:
-    enabled: true
-    engine-mode: 2
-    hidden-blocks:
-    # You can add air here such that many holes are generated.
-    # This works well against cave finders but may cause client FPS drops for all players.
-    - air
-    - copper_ore
-    - deepslate_copper_ore
-    - raw_copper_block
-    - diamond_ore
-    - deepslate_diamond_ore
-    - gold_ore
-    - deepslate_gold_ore
-    - iron_ore
-    - deepslate_iron_ore
-    - raw_iron_block
-    - lapis_ore
-    - deepslate_lapis_ore
-    - redstone_ore
-    - deepslate_redstone_ore
-    lava-obscures: false
-    # As of 1.18 some ores are generated much higher.
-    # Please adjust the max-block-height setting at your own discretion.
-    # https://minecraft.wiki/w/Ore might be helpful.
-    max-block-height: 64
-    replacement-blocks:
-    # Chest is a tile entity and can't be added to hidden-blocks in engine-mode: 2.
-    # But adding chest here will hide buried treasures, if max-block-height is increased.
-    - chest
-    - amethyst_block
-    - andesite
-    - budding_amethyst
-    - calcite
-    - coal_ore
-    - deepslate_coal_ore
-    - deepslate
-    - diorite
-    - dirt
-    - emerald_ore
-    - deepslate_emerald_ore
-    - granite
-    - gravel
-    - oak_planks
-    - smooth_basalt
-    - stone
-    - tuff
-    update-radius: 2
-    use-permission: false
-```
+## 注意事项
 
-</details>
+*   反 X 射线功能会增加服务器的性能开销，尤其是在模式 2 下。请根据服务器性能合理配置反 X 射线功能。
+*   反 X 射线功能并非万能的，无法完全阻止所有 X 射线作弊行为。一些高级 X 射线模组或客户端可能仍然可以绕过反 X 射线。
+*   过度配置反 X 射线 (例如过大的更新半径、过多的隐藏方块类型) 可能会导致服务器性能下降或出现视觉伪影。请谨慎配置。
+*   建议结合其他反作弊措施 (例如反作弊插件、人工巡查) 来共同维护服务器的游戏公平性。
 
-<details>
-  <summary>Nether Configuration</summary>
-
-Copy and paste into your `paper-world.yml` within your nether world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
-
-```yml title="world_nether/paper-world.yml"
-anticheat:
-  anti-xray:
-    enabled: true
-    engine-mode: 2
-    hidden-blocks:
-    # See note about air and possible client performance issues above.
-    - air
-    - ancient_debris
-    - bone_block
-    - glowstone
-    - magma_block
-    - nether_bricks
-    - nether_gold_ore
-    - nether_quartz_ore
-    - polished_blackstone_bricks
-    lava-obscures: false
-    max-block-height: 128
-    replacement-blocks:
-    - basalt
-    - blackstone
-    - gravel
-    - netherrack
-    - soul_sand
-    - soul_soil
-    update-radius: 2
-    use-permission: false
-
-```
-
-</details>
-
-<details>
-  <summary>End Configuration</summary>
-
-Copy and paste into your `paper-world.yml` within your end world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
-
-```yml title="world_the_end/paper-world.yml"
-anticheat:
-  anti-xray:
-    enabled: false
-```
-</details>
-
-
-### `engine-mode: 3`
-
-<details>
-  <summary>Default World Configuration</summary>
-
-Replace the existing `anticheat.anti-xray` block in `paper-world-defaults.yml` with the following:
-
-```yaml title="paper-world-defaults.yml"
-anticheat:
-  anti-xray:
-    enabled: true
-    engine-mode: 3
-    hidden-blocks:
-    # You can add air here such that many holes are generated.
-    # This works well against cave finders but may cause client FPS drops for all players.
-    - air
-    - copper_ore
-    - deepslate_copper_ore
-    - raw_copper_block
-    - diamond_ore
-    - deepslate_diamond_ore
-    - gold_ore
-    - deepslate_gold_ore
-    - iron_ore
-    - deepslate_iron_ore
-    - raw_iron_block
-    - lapis_ore
-    - deepslate_lapis_ore
-    - redstone_ore
-    - deepslate_redstone_ore
-    lava-obscures: false
-    # As of 1.18 some ores are generated much higher.
-    # Please adjust the max-block-height setting at your own discretion.
-    # https://minecraft.wiki/w/Ore might be helpful.
-    max-block-height: 64
-    replacement-blocks:
-    # Chest is a tile entity and can't be added to hidden-blocks in engine-mode: 2.
-    # But adding chest here will hide buried treasures, if max-block-height is increased.
-    - chest
-    - amethyst_block
-    - andesite
-    - budding_amethyst
-    - calcite
-    - coal_ore
-    - deepslate_coal_ore
-    - deepslate
-    - diorite
-    - dirt
-    - emerald_ore
-    - deepslate_emerald_ore
-    - granite
-    - gravel
-    - oak_planks
-    - smooth_basalt
-    - stone
-    - tuff
-    update-radius: 2
-    use-permission: false
-```
-
-</details>
-
-<details>
-  <summary>Nether Configuration</summary>
-
-Copy and paste into your `paper-world.yml` within your nether world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
-
-```yml title="world_nether/paper-world.yml"
-anticheat:
-  anti-xray:
-    enabled: true
-    engine-mode: 3
-    hidden-blocks:
-    # See note about air and possible client performance issues above.
-    - air
-    - ancient_debris
-    - bone_block
-    - glowstone
-    - magma_block
-    - nether_bricks
-    - nether_gold_ore
-    - nether_quartz_ore
-    - polished_blackstone_bricks
-    lava-obscures: false
-    max-block-height: 128
-    replacement-blocks:
-    - basalt
-    - blackstone
-    - gravel
-    - netherrack
-    - soul_sand
-    - soul_soil
-    update-radius: 2
-    use-permission: false
-```
-
-</details>
-
-<details>
-  <summary>End Configuration</summary>
-
-Copy and paste into your `paper-world.yml` within your end world folder. See the
-[Configuration Guide](./reference/configuration) for more information.
-
-```yml title="world_the_end/paper-world.yml"
-anticheat:
-  anti-xray:
-    enabled: false
-```
-
-</details>
-
-## FAQ, common pitfalls and support
-
-<details>
-  <summary>I can still see (some) ores / use X-ray</summary>
-
-As described above, there are several reasons why you might still see (some) ores even though you
-have enabled Anti-Xray:
-
-* The ores are above the configured `max-block-height` value.
-* Anti-Xray cannot hide ores exposed to air or other transparent blocks (in caves for example). In
-  principle this is also the case for `engine-mode: 2` and `engine-mode: 3`, however, usually the fake ores obstruct the
-  view of real blocks. Hiding those exposed ores too requires additional plugins.
-* The `use-permission` option is enabled and you have the Anti-Xray bypass permission (`paper.antixray.bypass`) or you have
-  operator status.
-* The block type is missing in the configured block lists. This can be the result of using an
-  outdated configuration file.
-
-</details>
-
-<details>
-  <summary>I have added fake blocks but X-ray doesn't show them</summary>
-
-If you use `engine-mode: 2` or `engine-mode: 3` and you have added fake blocks to the `hidden-blocks` list but you can't
-see them in-game using X-ray, this can have the following reasons:
-
-* The added block types are tile entities. Anti-Xray can hide (replace) tile entities (such as
-  chests), provided that they are not exposed to air or other transparent blocks. However, Anti-Xray
-  can't place tile entities as fake blocks into the chunk.
-* The block is disabled in your client's X-ray mod or not shown by your X-ray resource pack.
-
-</details>
-
-<details>
-  <summary>It doesn't work below y = 0 or in certain other places.</summary>
-
-* Your configuration file is probably outdated and missing important blocks in the
-  `replacement-blocks` list, such as `deepslate` or biome-specific blocks, such as `basalt`. You
-  might also want to check if the `hidden-blocks` list includes all important ores and their
-  `deepslate` variants.
-* If it doesn't work above a certain y-level, check your `max-block-height` setting.
-
-</details>
-
-<details>
-  <summary>It still doesn't work, further troubleshooting</summary>
-
-* Make sure to always restart your server after making changes to the Anti-Xray configuration.
-  Changes won't be applied automatically.
-* Do not use the `/reload` command. To apply Anti-Xray configuration changes a restart is required.
-* After restarting the server, verify that the configuration is applied correctly by inspecting the
-  config sections with timings or spark.
-
-</details>
-
-<details>
-  <summary>How and where do I ask for support if it still doesn't work?</summary>
-
-If the above bullet points don't solve your problem or if you have further questions about
-Anti-Xray, please don't hesitate to ask us on the [PaperMC Discord](https://discord.gg/papermc)
-using the #paper-help channel. Please try to provide as much detail as possible about your problem.
-"It doesn't work" isn't very helpful when asking for support. Describe what you want to achieve,
-what you have tried, what you expect and what you observe. Ideally include a timings or spark link
-and a picture what you observe in-game.
-
-</details>
+如果您在使用反 X 射线功能过程中遇到任何问题，请随时在 [PaperMC Discord](https://discord.gg/papermc) 的 `#paper-help` 频道中寻求帮助。

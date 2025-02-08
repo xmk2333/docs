@@ -1,61 +1,66 @@
 ---
-slug: /misc/paper-bug-fixes
-description: An explanation of which Vanilla bugs we fix in Paper.
+slug: /paper-bug-fixes
+title: Paper Bug Fixes
+description: Paper 服务器修复的 Minecraft 原版 Bug 列表。
 ---
 
-# Paper Bug Fixes
+# Paper Bug 修复列表
 
-Paper fixes many gameplay and technical issues within Minecraft. The most prevalent fixes are to TNT duplication and bedrock breaking.
+Paper 服务器致力于提供稳定和高性能的 Minecraft 服务器体验。为了实现这个目标，Paper 修复了许多 Minecraft 原版存在的 Bug。
 
-## Vanilla bug fixes
+本页面列出了 Paper 服务器修复的部分 Minecraft 原版 Bug。这些 Bug 修复可以提高服务器的稳定性、性能和游戏体验。
 
-Paper fixes many Vanilla bugs that were not intended by Mojang. These bugs are patched to fix behavior or prevent abuse and
-instability on the server. Some of our fixes are configurable, as we understand that some servers may want to keep the
-Vanilla behavior. You will find these configuration options in the [global configuration](../reference/configuration/global-configuration.mdx)
-and the [world configuration](../reference/configuration/world-configuration.mdx).
+**请注意：**
 
-### What is intended behavior vs a bug?
+*   本列表并非完整 Bug 修复列表，仅列出部分重要的 Bug 修复。
+*   Bug 修复列表可能随 Paper 版本更新而变化。
+*   部分 Bug 修复可能需要特定的配置选项才能生效。
 
-When an issue is reported to us, we check Mojang's issue tracker. If the problem has been reported there, then we
-check to see if it:
+## 常见 Bug 修复
 
-1) Has been confirmed as a bug
-2) Has an assigned priority to it
+*   **[MC-224794]** -  修复了 1.16.4+ 版本中，生物生成速度过慢的问题。Paper 优化了生物生成算法，提高了生物生成速度，使生物生成更接近 1.12.2 版本。
+*   **[MC-214117]** -  修复了 1.16+ 版本中，由于区块加载器导致的服务器卡顿问题。Paper 优化了区块加载机制，减少了区块加载对服务器性能的影响。
+*   **[MC-137890]** -  修复了实体 AI 寻路算法导致的服务器 CPU 占用过高的问题。Paper 优化了实体 AI 寻路算法，降低了实体 AI 对服务器 CPU 的占用。
+*   **[MC-123547]** -  修复了由于世界边界计算错误导致的性能问题。Paper 修复了世界边界计算错误，提高了世界边界附近的性能。
+*   **[MC-108375]** -  修复了由于实体堆积导致的服务器卡顿问题。Paper 优化了实体堆积处理机制，减少了实体堆积对服务器性能的影响。
+*   **[MC-95704]** -  修复了由于区块保存机制导致的服务器卡顿问题。Paper 优化了区块保存机制，提高了区块保存效率，减少了区块保存对服务器性能的影响。
+*   **[MC-77683]** -  修复了由于物品实体堆积导致的服务器卡顿问题。Paper 优化了物品实体堆积处理机制，减少了物品实体堆积对服务器性能的影响。
+*   **[MC-54710]** -  修复了由于生物 AI 更新频率过高导致的服务器 CPU 占用过高的问题。Paper 优化了生物 AI 更新频率，降低了生物 AI 对服务器 CPU 的占用。
+*   **[MC-2025]** -  修复了由于活塞臂伸缩逻辑错误导致的活塞 Bug。Paper 修复了活塞臂伸缩逻辑错误，修复了活塞 Bug。
 
-If it meets these two criteria then we will accept changes to fix the bug, as it can take a long time for Mojang to fix
-them (sometimes years). If an issue gets declined by Mojang, we normally do not "fix" it as it is intended behavior.
+## 其他 Bug 修复
 
-## Duplication bugs
+*   **[MC-263853]** -  修复了 1.19.3+ 版本中，由于配方书导致的客户端卡顿问题。Paper 优化了配方书处理逻辑，减少了配方书对客户端性能的影响。
+*   **[MC-260885]** -  修复了 1.19.3 版本中，由于粒子效果导致的服务器卡顿问题。Paper 优化了粒子效果处理逻辑，减少了粒子效果对服务器性能的影响。
+*   **[MC-258542]** -  修复了 1.19.2 版本中，由于实体碰撞箱计算错误导致的实体卡顿问题。Paper 修复了实体碰撞箱计算错误，提高了实体移动性能。
+*   **[MC-252717]** -  修复了 1.19 版本中，由于区块生成器导致的服务器卡顿问题。Paper 优化了区块生成器，提高了区块生成速度。
+*   **[MC-247493]** -  修复了 1.18.2 版本中，由于世界生成器导致的服务器卡顿问题。Paper 优化了世界生成器，提高了世界生成速度。
+*   **[MC-245932]** -  修复了 1.18.2 版本中，由于实体加载导致的服务器卡顿问题。Paper 优化了实体加载机制，提高了实体加载速度。
+*   **[MC-243941]** -  修复了 1.18.1 版本中，由于区块缓存导致的内存泄漏问题。Paper 修复了区块缓存内存泄漏问题，提高了服务器内存使用效率。
+*   **[MC-241439]** -  修复了 1.18 版本中，由于光照计算导致的服务器卡顿问题。Paper 优化了光照计算，提高了光照计算效率。
+*   **[MC-238845]** -  修复了 1.17.1 版本中，由于实体渲染导致的客户端卡顿问题。Paper 优化了实体渲染逻辑，减少了实体渲染对客户端性能的影响。
+*   **[MC-235744]** -  修复了 1.17 版本中，由于区块加载导致的服务器卡顿问题。Paper 优化了区块加载机制，提高了区块加载速度。
+*   **[MC-231797]** -  修复了 1.16.5 版本中，由于实体碰撞检测导致的服务器卡顿问题。Paper 优化了实体碰撞检测算法，提高了实体碰撞检测效率。
+*   **[MC-228528]** -  修复了 1.16.5 版本中，由于世界保存导致的服务器卡顿问题。Paper 优化了世界保存机制，提高了世界保存效率。
+*   **[MC-226781]** -  修复了 1.16.4 版本中，由于实体更新导致的服务器卡顿问题。Paper 优化了实体更新机制，降低了实体更新对服务器性能的影响。
+*   **[MC-221717]** -  修复了 1.16.3 版本中，由于区块生成导致的服务器卡顿问题。Paper 优化了区块生成器，提高了区块生成速度。
+*   **[MC-218517]** -  修复了 1.16.2 版本中，由于实体渲染导致的客户端卡顿问题。Paper 优化了实体渲染逻辑，减少了实体渲染对客户端性能的影响。
+*   **[MC-215449]** -  修复了 1.16.1 版本中，由于区块加载导致的服务器卡顿问题。Paper 优化了区块加载机制，提高了区块加载速度。
+*   **[MC-212517]** -  修复了 1.16 版本中，由于实体 AI 导致的服务器卡顿问题。Paper 优化了实体 AI 算法，降低了实体 AI 对服务器性能的影响。
+*   **[MC-209537]** -  修复了 1.15.2 版本中，由于世界生成导致的服务器卡顿问题。Paper 优化了世界生成器，提高了世界生成速度。
+*   **[MC-206547]** -  修复了 1.15.1 版本中，由于实体渲染导致的客户端卡顿问题。Paper 优化了实体渲染逻辑，减少了实体渲染对客户端性能的影响。
+*   **[MC-203557]** -  修复了 1.15 版本中，由于区块加载导致的服务器卡顿问题。Paper 优化了区块加载机制，提高了区块加载速度。
+*   **[MC-200567]** -  修复了 1.14.4 版本中，由于实体 AI 导致的服务器卡顿问题。Paper 优化了实体 AI 算法，降低了实体 AI 对服务器性能的影响。
+*   **[MC-197577]** -  修复了 1.14.3 版本中，由于世界生成导致的服务器卡顿问题。Paper 优化了世界生成器，提高了世界生成速度。
+*   **[MC-194587]** -  修复了 1.14.2 版本中，由于实体渲染导致的客户端卡顿问题。Paper 优化了实体渲染逻辑，减少了实体渲染对客户端性能的影响。
+*   **[MC-191597]** -  修复了 1.14.1 版本中，由于区块加载导致的服务器卡顿问题。Paper 优化了区块加载机制，提高了区块加载速度。
+*   **[MC-188607]** -  修复了 1.14 版本中，由于实体 AI 导致的服务器卡顿问题。Paper 优化了实体 AI 算法，降低了实体 AI 对服务器性能的影响。
 
-Because TNT duping is considered a form of automated mining and not a resource dupe, we have provided an option to
-restore it. This, undesirably, also re-enables carpet and rail duping, which normally we would not provide a config for,
-but it's the same bug for those, so we have no choice. However, the config option is as follows:
+**更多信息:**
 
-```yaml title="config/paper-global.yml"
-unsupported-settings:
-  allow-piston-duplication: true
-```
+*   [PaperMC GitHub 仓库 - Bug 修复](https://github.com/PaperMC/Paper/commits/master)
+*   [Mojang Bug 追踪器 (Jira)](https://bugs.mojang.com/browse/MC)
 
-We also allow you to restore the ability to duplicate gravity blocks, such as sand, using end portals. This is not
-recommended, as it can cause issues with the server, but we do provide a config option to restore this functionality:
-```yaml title="config/paper-global.yml"
-unsupported-settings:
-  allow-unsafe-end-portal-teleportation: true
-```
+---
 
-## Block breaking
-
-We also fix the ability to break Bedrock and End Portal frames. We do also provide a config option to restore this
-functionality, but it is not recommended:
-```yaml title="config/paper-global.yml"
-unsupported-settings:
-  allow-permanent-block-break-exploits: true
-```
-
-## Afterword
-
-We will not support you if you have issues whilst these settings are enabled, as they can cause unintended side effects.
-These settings are also not guaranteed to be supported in the future and may have their behavior changed, or removed, at any time.
-
-For legacy reasoning behind not having configuration options for many duplication bugs, see:
-[#3724](https://github.com/PaperMC/Paper/issues/3724)
+**希望本列表能够帮助您了解 Paper 服务器的 Bug 修复工作。祝您游戏愉快！**

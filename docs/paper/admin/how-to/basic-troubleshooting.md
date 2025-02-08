@@ -1,144 +1,133 @@
 ---
 slug: /basic-troubleshooting
-description: This guide will help you diagnose your server's problem before reporting it to PaperMC or the plugin's author.
+title: Basic Troubleshooting
+description: 解决 Paper 服务器问题的基本步骤。
 ---
 
-# Basic Troubleshooting
+# 基本故障排除
 
-This guide will help you diagnose your server's problem before reporting it to PaperMC or the plugin's author.
+本指南将帮助您解决 Paper 服务器的常见问题。
 
-:::caution[Stop Your Server And Take A Backup]
+## 检查服务器日志
 
-Before following this guide, stop your server first. Modifying server files while it is still running will corrupt them.
-Only a full server shutdown can prevent this.
+服务器日志是诊断服务器问题的第一步。Paper 服务器会将所有重要的事件和错误信息记录到日志文件中。
 
-Also, if you don't follow this guide carefully or make a mistake while following this guide, you might corrupt your server. It is highly advised to back up your server before following this guide.
-It would be ideal to create a test server by copying your production server's file, but that's not always possible.
+**日志文件位置:**
 
-:::
+服务器日志文件通常位于服务器根目录下的 `logs` 文件夹中，最新的日志文件名为 `latest.log`。
 
-## Read the error message
+**如何查看日志:**
 
-If your server encounters a problem, it will either print an error message on the server console, create a crash report and close itself, or do both.
+您可以使用文本编辑器 (例如 Notepad++, VS Code, Sublime Text) 打开 `latest.log` 文件查看日志内容。您也可以在服务器控制台中实时查看日志输出。
 
-If your server crashes, the crash report will be saved in the `crash-report` directory.
-If your server didn't crash, those error messages will be stored in the `log` directory along with other messages.
+**日志分析技巧:**
 
-Note that the logs older than the latest will be compressed and not stored as plain text files.
+*   **关注错误和警告信息:** 日志中通常会标记错误 (ERROR) 和警告 (WARN) 信息，这些信息通常指示了服务器存在问题。
+*   **从启动日志开始:** 服务器启动日志包含了服务器启动过程中的各种信息，例如 Java 版本、Paper 版本、插件加载情况等。启动日志中的错误信息通常指示了服务器启动失败的原因。
+*   **使用关键词搜索:** 如果您知道问题的关键词 (例如插件名称、错误信息关键词)，可以使用文本编辑器的搜索功能在日志中查找相关信息。
+*   **查看时间戳:** 日志信息通常包含时间戳，可以帮助您了解问题发生的时间顺序。
 
-The first thing you have to do is diagnose those messages.
+**常见日志错误和解决方法:**
 
-### Case 01: Paper watchdog thread dump
+*   **`java.lang.OutOfMemoryError: Java heap space`**:  Java 堆内存溢出错误。表示服务器内存不足。解决方法：增加服务器分配的内存 (例如修改启动脚本中的 `-Xmx` 参数)。
+*   **`Could not load 'plugins/<插件名称>.jar' in folder 'plugins'`**: 插件加载失败。可能原因：插件文件损坏、插件依赖库缺失、插件版本不兼容等。解决方法：重新下载插件、安装插件依赖库、更新插件版本或更换兼容版本。
+*   **`java.net.BindException: Address already in use: bind`**: 端口绑定异常。表示服务器端口被占用。解决方法：检查是否有其他程序占用了服务器端口，或修改服务器端口 (修改 `server.properties` 文件中的 `server-port` 配置项)。
+*   **`[Server thread/WARN]: Can't keep up! Is the server overloaded? Running behind <时间> ticks`**: 服务器运行缓慢警告。表示服务器无法及时处理游戏 Tick，服务器性能不足。解决方法：优化服务器配置、减少服务器负载 (例如减少实体数量、优化插件性能、降低视野距离等)。
 
-If your error message looks like this, **do not blindly report it to PaperMC** as it says:
+如果您无法通过查看日志解决问题，请继续阅读以下故障排除步骤。
 
-```
-[00:00:00] [Paper Watchdog Thread/ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH - git-Paper-366 (MC: 1.19.3) ---
-[00:00:00] [Paper Watchdog Thread/ERROR]: The server has not responded for 10 seconds! Creating thread dump
-[00:00:00] [Paper Watchdog Thread/ERROR]: ------------------------------
-```
+## 检查配置文件
 
-This can be caused by various things. Maybe your server's hardware is not capable of running Minecraft server. Maybe one of the plugins you use is causing lag on your server.
+配置文件错误也可能导致服务器问题。Paper 服务器使用多个配置文件，包括 `paper.yml`, `bukkit.yml`, `spigot.yml`, `server.properties` 等。
 
-The thread dump from Paper Watchdog can be found below that line. If you find any plugin's name in there, talk to the plugin's author about that, not PaperMC.
+**常见配置文件错误:**
 
-### Case 02: Stack trace
+*   **YAML 格式错误:** 配置文件使用 YAML 格式编写，如果 YAML 格式错误 (例如缩进错误、语法错误)，会导致配置文件加载失败或配置项解析错误。解决方法：使用 YAML 格式检查工具检查配置文件格式，并修正错误。
+*   **配置项值错误:** 某些配置项的值必须符合特定的格式或范围，如果配置项值错误，会导致配置项无效或服务器运行异常。解决方法：参考 Paper 官方文档，检查配置项值的格式和范围，并修正错误。
+*   **配置项冲突:** 某些配置项之间可能存在冲突，如果配置项冲突，会导致服务器行为异常。解决方法：仔细阅读配置项说明，避免配置项冲突。
 
-Almost every problem you encounter will print error message lines, which are called "stack trace", on the server console. Examining the stack trace will help you find out what is causing problems on your server.
+**如何检查配置文件:**
 
-The stack trace starts with the error message, exception type, and exception message.
+*   **使用文本编辑器打开配置文件:** 检查配置文件内容是否符合预期，是否有明显的格式错误或值错误。
+*   **使用 Paper 提供的配置检查工具 (如果存在):**  某些 Paper 版本可能提供配置检查工具，可以自动检查配置文件是否存在错误。请参考 Paper 官方文档了解是否有配置检查工具。
 
-Both error messages and exception messages were put there by the developer of either your plugin or Paper. These messages tell you what problem your server experienced.
-An exception type like `java.lang.RuntimeException` tells you the type of the exception. This will help the developer (and you) understand the type of problem.
+如果您检查配置文件后仍然无法解决问题，请继续阅读以下故障排除步骤。
 
-Many lines beginning with `at` may appear beneath the exception message. These are the body of the stack trace. These lines tell you where the problem starts. The top line of the body of the stack trace will tell you exactly where the problem occurred and, if possible, display where it came from.
+## 检查插件
 
-If you find any plugin's name in the stack trace, head to [Check Plugin Updates](#check-plugin-updates) and read from there. In most cases, the plugin, whose name is found on the stack trace, is causing the problem. If not, continue reading.
+插件问题是服务器问题的常见原因之一。插件冲突、插件 bug、插件配置错误等都可能导致服务器运行异常。
 
-Here are some examples of stack traces.
+**插件问题排查步骤:**
 
-<details>
-  <summary>Example 01: Server attempted to load chunk saved with newer version of minecraft!</summary>
+1.  **禁用所有插件:** 暂时禁用所有插件，重启服务器，观察服务器是否恢复正常。如果服务器恢复正常，则说明问题可能由插件引起。
+2.  **逐个启用插件:** 逐个启用插件，每次启用一个插件后重启服务器，观察服务器是否出现问题。通过逐个启用插件，可以找出导致问题的插件。
+3.  **检查插件日志:** 检查插件的日志文件，查看是否有插件报错信息。插件日志通常位于 `logs` 文件夹下，文件名可能包含插件名称。
+4.  **更新或更换插件:** 如果插件存在 bug 或版本不兼容问题，尝试更新插件到最新版本，或更换为其他类似的插件。
+5.  **检查插件配置:** 检查插件的配置文件，确保插件配置正确。
 
-```
-[00:00:00 WARN]: java.lang.RuntimeException: Server attempted to load chunk saved with newer version of minecraft! 3218 > 3120
-```
+**插件冲突排查技巧:**
 
-You tried to load the world generated with a higher version of Minecraft. You cannot do this.
-If you don't have any backup of your world before the chunk version update, you must use your updated world with a higher version of Minecraft.
+*   **禁用最近安装或更新的插件:** 如果问题在最近安装或更新插件后出现，优先禁用这些插件进行排查。
+*   **禁用功能类似的插件:** 如果您安装了多个功能类似的插件 (例如多个聊天插件、多个权限插件)，尝试禁用部分插件，观察是否解决冲突。
 
-</details>
+如果您排查插件问题后仍然无法解决问题，请继续阅读以下故障排除步骤。
 
-## Finding the culprit
+## 检查 Java 版本
 
-If you can't find the name of any plugin in the thread dump or stack trace, try these steps.
+Paper 服务器对 Java 版本有要求。使用不受支持或不兼容的 Java 版本可能导致服务器运行异常或性能问题。
 
-### Disable all plugins
+**如何检查 Java 版本:**
 
-To determine if it is a plugin or Paper itself that is causing problems, disable all of your plugins first.
+在服务器终端或命令提示符中运行 `java -version` 命令，查看 Java 版本信息。
 
-You can disable all of your plugins by renaming the `plugins` directory to something else, such as `plugins-disabled`, or by archiving the `plugins` directory and deleting it.
+**Paper 推荐的 Java 版本:**
 
-After that, try to run your server.
+请参考 [Paper 官方文档](https://docs.papermc.io/) 或 [入门指南](/paper/admin/getting-started/getting-started) 了解 Paper 版本对应的推荐 Java 版本。
 
-If the problem is resolved after removing the plugins, you know that it was a plugin that caused the issue.
-If you still experience problems, head to [Paper Documentation](#paper-documentation). Maybe your server is misconfigured, and that is creating issues.
+**如何更新 Java 版本:**
 
-### Binary search
+请参考 [安装或更新 Java](/misc/java-install) 指南更新 Java 版本。
 
-To efficiently search for the plugin that is causing the issue, you can do the following:
+如果您检查 Java 版本后仍然无法解决问题，请继续阅读以下故障排除步骤。
 
-1. **Split your plugins into two groups**
-   The size of the two groups can be different, but it is ideal if the difference is minimal. Make sure that plugins that depend on each other are grouped together.
-2. **Disable one of the two groups of plugins**
-   You can disable them by changing their extension from `.jar` to something else, such as `.jar-disabled`, or move them outside the `plugins` directory and into a temporary directory.
-3. **Run your server and check if the problem still exists**
-   If the problem is resolved, the plugin that caused the issue is one of the disabled plugins.
-   If the problem is not resolved, the plugin that is causing the issue is one of the active plugins.
-4. **Repeat from the start with the suspect plugin group**
-   Repeat the steps above with groups that have the plugin that is causing the issue.
+## 检查服务器资源
 
-:::danger
+服务器资源不足 (例如 CPU, 内存, 磁盘 I/O) 也可能导致服务器性能问题或运行异常。
 
-Some plugins that you install are not a typical plugin, but a library. These are installed like plugins,
-however tend to offer few user-facing features and are relied upon by other plugins for their
-functionality. If you disable a library, plugins that depend on it will not work properly. Common
-examples of these libraries are ProtocolLib, Vault providers, permission plugins, etc.
+**如何检查服务器资源使用情况:**
 
-:::
+*   **使用服务器监控工具:**  使用服务器监控工具 (例如 `top`, `htop`, `vmstat`, `iostat`, `free`) 监控服务器的 CPU, 内存, 磁盘 I/O 等资源使用情况。
+*   **查看 timings 报告:** 使用 `/paper timings report` 或 `/paper timings paste` 命令生成 timings 报告，分析服务器性能瓶颈，timings 报告中包含了服务器资源使用情况信息。
 
-## Check plugin updates
+**常见服务器资源瓶颈和解决方法:**
 
-There is a chance that your problem is already fixed in the latest release or latest build of the plugin.
+*   **CPU 瓶颈:** CPU 使用率持续过高 (接近 100%)。解决方法：优化服务器配置、减少服务器负载 (例如减少实体数量、优化插件性能、降低视野距离等)、升级服务器 CPU 硬件。
+*   **内存瓶颈:** 内存使用率持续过高 (接近 100%)，或出现 `java.lang.OutOfMemoryError` 错误。解决方法：增加服务器分配的内存 (例如修改启动脚本中的 `-Xmx` 参数)、优化内存使用 (例如使用 JVM GC 调优参数)。
+*   **磁盘 I/O 瓶颈:** 磁盘 I/O 使用率过高，导致服务器读写磁盘速度缓慢。解决方法：更换更快的磁盘 (例如 SSD 固态硬盘)、优化磁盘 I/O 操作 (例如减少世界自动保存频率)。
 
-Head to your plugin's official download page and check if you are using the latest build or the latest release of the plugin. If not, update it to the latest version and try to run your server again to see if the problem is resolved.
+如果您检查服务器资源后仍然无法解决问题，请继续阅读以下故障排除步骤。
 
-### Update library plugins
+## 寻求帮助
 
-Many plugins use library plugins like ProtocolLib, and you have to download them and put them in `plugins` directory.
+如果您尝试了以上所有故障排除步骤，仍然无法解决问题，请不要灰心。您可以向 PaperMC 社区寻求帮助。
 
-If you don't update them to the latest version or latest build, you might experience problems related to plugins that use the library plugin.
+**如何寻求帮助:**
 
-Some library plugins tell their users to use their latest development build for support of the latest Minecraft version. You should look carefully at the requirements of your plugin.
+*   **PaperMC Discord 频道:** 加入 [PaperMC Discord 服务器](https://discord.gg/papermc)，在 `#paper-help` 频道中提问。请详细描述您的问题，并提供服务器日志、配置文件、插件列表等信息，以便社区成员更好地帮助您。
+*   **PaperMC 论坛:** 在 [PaperMC 论坛](https://forums.papermc.io/) 发帖求助。同样，请详细描述您的问题，并提供相关信息。
 
-## Check documentation
+**寻求帮助时需要提供的信息:**
 
-If you misconfigured your plugin or your server, it can also cause problems on your server.
+*   **Paper 版本:**  使用 `/paper version` 命令查看 Paper 版本信息。
+*   **Java 版本:**  运行 `java -version` 命令查看 Java 版本信息。
+*   **服务器日志 (latest.log):**  上传或粘贴服务器 `logs/latest.log` 文件的内容。
+*   **配置文件 (paper.yml, bukkit.yml, spigot.yml, server.properties 等):**  上传或粘贴相关配置文件的内容。
+*   **插件列表 (plugins 文件夹下的插件列表):**  列出您服务器安装的插件名称和版本。
+*   **问题描述:**  详细描述您遇到的问题，包括问题发生的时间、频率、现象、操作步骤等。
+*   **您已经尝试过的解决方法:**  列出您已经尝试过的故障排除步骤和结果。
 
-### Plugin documentation
+提供尽可能详细的信息可以帮助社区成员更快更准确地定位问题并提供解决方案。
 
-Many plugins provide their own documentation about how to set them up properly. Read those documents carefully and check if there is something wrong with the plugin's configuration.
+---
 
-### Paper documentation
-
-Paper can also be configured in a variety of ways. Check these documents for detailed explanations about each configuration.
-
-* [Paper Global Config](../reference/configuration/global-configuration.mdx)
-* [Paper Per World Configuration](../reference/configuration/world-configuration.mdx)
-
-## Consult with a developer
-
-If your problem is related to a plugin you use, and you still don't know how to solve it, you can try to reach out to the plugin's author.
-Many plugins have a way to contact their author, like a GitHub issue tracker, Discord support guild, Gitter, IRC, etc.
-
-If your problem isn't related to any plugin, you can come to PaperMC's Discord server and ask for help, or create a new issue on our GitHub issue tracker.
+**希望本指南能够帮助您解决 Paper 服务器问题。祝您游戏愉快！**

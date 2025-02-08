@@ -1,291 +1,151 @@
 ---
 slug: /reference/region-logic
-title: Region Logic
-description: An overview to how Folia's regionizer works.
+title: 区域逻辑
+description: Folia 的区域化器如何工作的概述。
 ---
 
-## Fundamental regionizing logic
-
-## Region
-
-A region is simply a set of owned chunk positions and implementation 
-defined unique data object tied to that region. It is important
-to note that for any non-dead region x, that for each chunk position y
-it owns that there is no other non-dead region z such that
-the region z owns the chunk position y.
-
-## Regionizer
-
-Each world has its own regionizer. The regionizer is a term used 
-to describe the logic that the class `ThreadedRegionizer` executes
-to create, maintain, and destroy regions. Maintenance of regions is 
-done by merging nearby regions together, marking which regions 
-are eligible to be ticked, and finally by splitting any regions 
-into smaller independent regions. Effectively, it is the logic 
-performed to ensure that groups of nearby chunks are considered 
-a single independent region.
-
-## Guarantees the regionizer provides
-
-The regionizer provides a set of important invariants that allows
-regions to tick in parallel without race conditions:
-
-### First invariant
-
-The first invariant is simply that any chunk holder that exists
-has one, and only one, corresponding region.
-
-### Second invariant
-
-The second invariant is that for every _existing_ chunk holder x that is 
-contained in a region that every each chunk position within the 
-"merge radius" of x is owned by the region. Effectively, this invariant 
-guarantees that the region is not close to another region, which allows
-the region to assume while ticking it can create data for chunk holders
-"close" to it. 
-
-### Third invariant
-
-The third invariant is that a ticking region _cannot_ expand
-the chunk positions it owns as it ticks. The third invariant
-is important as it prevents ticking regions from "fighting"
-over non-owned nearby chunks, to ensure that they truly tick
-in parallel, no matter what chunk loads they may issue while
-ticking. 
-
-To comply with the first invariant, the regionizer will 
-create "transient" regions _around_ ticking regions. Specifically, 
-around in this context means close enough that would require a merge, 
-but not far enough to be considered independent. The transient regions
-created in these cases will be merged into the ticking region 
-when the ticking region finishes ticking.
-
-Both of the second invariant and third invariant combined allow 
-the regionizer to guarantee that a ticking region may create
-and then access chunk holders around it (i.e. sync loading) without
-the possibility that it steps on another region's toes.
-
-### Fourth invariant
-
-The fourth invariant is that a region is only in one of four
-states: "transient", "ready", "ticking", or "dead." 
-
-The "ready" state allows a state to transition to the "ticking" state,
-while the "transient" state is used as a state for a region that may
-not tick. The "dead" state is used to mark regions which should
-not be use.
-
-The states transitions are explained later, as it ties in
-with the regionizer's merge and split logic.
-
-## Regionizer implementation
-
-The regionizer implementation is a description of how
-the class `ThreadedRegionizer` adheres to the four invariants
-described previously.
-
-### Splitting the world into sections
-
-The regionizer does not operate on chunk coordinates, but rather
-on "region section coordinates." Region section coordinates simply
-represent a grouping of NxN chunks on a grid, where N is some power
-of two. The actual number is left ambiguous, as region section coordinates
-are only an internal detail of how chunks are grouped. 
-For example, with N=16 the region section (0,0) encompasses all 
-chunks x in [0,15] and z in [0,15]. This concept is similar to how 
-the chunk coordinate (0,0) encompasses all blocks x in [0, 15] 
-and z in [0, 15]. Another example with N=16, the chunk (17, -5) is 
-contained within region section (1, -1). 
-
-Region section coordinates are used only as a performance
-tradeoff in the regionizer, as by approximating chunks to their
-region coordinate allows it to treat NxN chunks as a single
-unit for regionizing. This means that regions do not own chunks positions,
-but rather own region section positions. The grouping of NxN chunks 
-allows the regionizing logic to be performed only on 
-the creation/destruction of region sections.
-For example with N=16 this means up to NxN-1=255 possible
-less operations in areas such as addChunk/region recalculation 
-assuming region sections are always full.
+## 基本区域化逻辑
 
-### Implementation variables
+## 区域
 
-The implementation variables control how aggressively the
-regionizer will maintain regions and merge regions.
+区域只是一组拥有的区块位置和与该区域绑定的实现定义的唯一数据对象。重要的是要注意，对于任何非死区域 x，对于它拥有的每个区块位置 y，都不存在其他非死区域 z，使得区域 z 拥有区块位置 y。
 
-#### Recalculation count
+## 区域化器
 
-The recalculation count is the minimum number of region sections
-that a region must own to allow it to re-calculate. Note that
-a recalculation operation simply calculates the set of independent
-regions that exist within a region to check if a split can be
-performed. 
-This is a simple performance knob that allows split logic to be 
-turned off for small regions, as it is unlikely that small regions 
-can be split in the first place.
+每个世界都有自己的区域化器。区域化器是一个术语，用于描述类 `ThreadedRegionizer` 执行的逻辑，以创建、维护和销毁区域。区域的维护通过将附近的区域合并在一起、标记哪些区域有资格进行 ticking 以及最终将任何区域拆分为更小的独立区域来完成。实际上，它是执行的逻辑，以确保附近的区块组被视为单个独立区域。
 
-#### Max dead section percent
+## 区域化器提供的保证
 
-The max dead section percent is the minimum percent of dead 
-sections in a region that must exist before a region can run
-re-calculation logic.
+区域化器提供了一组重要的不变量，这些不变量允许区域并行 ticking 而不会发生竞争条件：
 
-#### Empty section creation radius
+### 第一个不变量
 
-The empty section creation radius variable is used to determine
-how many empty region sections are to exist around _any_ 
-region section with at least one chunk. 
+第一个不变量很简单，即任何存在的区块持有者都只有一个且只有一个对应的区域。
 
-Internally, the regionizer enforces the third invariant by
-preventing ticking regions from owning new region sections.
-The creation of empty sections around any non-empty section will 
-then enforce the second invariant.
+### 第二个不变量
 
-#### Region section merge radius
+第二个不变量是，对于包含在区域中的每个**现有**区块持有者 x，区域拥有的每个区块位置都在 x 的"合并半径"内。实际上，此不变量保证了该区域不靠近另一个区域，这允许该区域在 ticking 时假设它可以为其"靠近"的区块持有者创建数据。
 
-The merge radius variable is used to ensure that for any
-existing region section x that for any other region section y within
-the merge radius are either owned by region that owns x 
-or are pending a merge into the region that owns x or that the
-region that owns x is pending a merge into the region that owns y.
+### 第三个不变量
 
-#### Region section chunk shift
+第三个不变量是，ticking 区域**不能**在 ticking 时扩展其拥有的区块位置。第三个不变量很重要，因为它防止 ticking 区域"争夺"未拥有的附近区块，以确保它们真正并行 ticking，无论它们在 ticking 时可能发出什么区块加载。
 
-The region section chunk shift is simply log2(grid size N). Thus,
-N = 1 << region section chunk shift. The conversion from
-chunk position to region section is additionally defined as
-region coordinate = chunk coordinate >> region section chunk shift.
+为了遵守第一个不变量，区域化器将围绕 ticking 区域创建"瞬态"区域。具体来说，在这种情况下，围绕意味着足够近，需要合并，但又不够远，无法被认为是独立的。在这些情况下创建的瞬态区域将在 ticking 区域完成 ticking 时合并到 ticking 区域中。
 
-### Operation
+第二个不变量和第三个不变量的结合使区域化器能够保证 ticking 区域可以创建然后访问其周围的区块持有者（即同步加载），而不会踩到另一个区域的脚趾。
 
-The regionizer is operated by invoking `ThreadedRegionizer#addChunk(x, z)`
-or `ThreadedRegionizer#removeChunk(x, z)` when a chunk holder is created
-or destroyed. 
+### 第四个不变量
 
-Additionally, `ThreadedRegion#tryMarkTicking` can be used by a caller
-that attempts to move a region from the "ready" state to the "ticking"
-state. It is vital to note that this function will return false if 
-the region is not in the "ready" state, as it is possible
-that even a region considered to be "ready" in the past (i.e. scheduled
-to tick) may be unexpectedly marked as "transient." Thus, the caller
-needs to handle such cases. The caller that successfully marks 
-a region as ticking must mark it as non-ticking by using
-`ThreadedRegion#markNotTicking`.
+第四个不变量是，一个区域仅处于四种状态之一："瞬态"、"就绪"、"ticking"或"死亡"。
 
-The function ThreadedRegion#markNotTicking returns true if the
-region was migrated from "ticking" state to "ready" state, and false
-in all other cases. Effectively, it returns whether the current region
-may be later ticked again.
+"就绪"状态允许状态转换为"ticking"状态，而"瞬态"状态用作可能不 ticking 的区域的状态。"死亡"状态用于标记不应使用的区域。
 
-### Region section state
+状态转换将在稍后解释，因为它与区域化器的合并和拆分逻辑相关联。
 
-A region section state is one of "dead" or "alive." A region section
-may additionally be considered "non-empty" if it contains
-at least one chunk position, and "empty" otherwise.
+## 区域化器实现
 
-A region section is considered "dead" if and only if the region section
-is also "empty" and that there exist no other "empty" sections within the 
-empty section creation radius. 
+区域化器实现是对类 `ThreadedRegionizer` 如何遵守先前描述的四个不变量的描述。
 
-The existence of the dead section state is purely for performance, as it
-allows the recalculation logic of a region to be delayed until the region
-contains enough dead sections. However, dead sections are still 
-considered to belong to the region that owns them just as alive sections.
+### 将世界划分为区域段
 
-### Addition of chunks (`addChunk`)
+区域化器不处理区块坐标，而是处理"区域段坐标"。区域段坐标只是表示网格上 NxN 个区块的分组，其中 N 是 2 的某个幂。实际数字是模糊的，因为区域段坐标只是区块如何分组的内部细节。例如，对于 N=16，区域段 (0,0) 包含 [0,15] 和 z 在 [0,15] 中的所有区块 x。此概念类似于区块坐标 (0,0) 如何包含 [0, 15] 和 z 在 [0, 15] 中的所有区块 x。另一个 N=16 的示例，区块 (17, -5) 包含在区域段 (1, -1) 中。
 
-The addition of chunks to the regionizer boils down to two cases:
+区域段坐标仅用作区域化器中的性能权衡，因为通过将区块近似为其区域坐标，可以将其视为 NxN 个区块的单个单元进行区域化。这意味着区域不拥有区块位置，而是拥有区域段位置。NxN 个区块的分组允许区域化逻辑仅在区域段的创建/销毁时执行。例如，对于 N=16，这意味着在诸如 addChunk/区域重新计算之类的区域中，最多可以减少 NxN-1=255 个可能的操作，假设区域段始终是满的。
 
-#### Target region section already exists and is not empty
+### 实现变量
 
-In this case, it simply adds the chunk to the section and returns.
+实现变量控制区域化器维护区域和合并区域的积极程度。
 
-#### Target region section does not exist or is empty
+#### 重新计算计数
 
-In this case, the region section will be created if it does not exist.
-Additionally, the region sections in the "create empty radius" will be
-created as well.
+重新计算计数是区域必须拥有的最小区域段数，以允许其重新计算。请注意，重新计算操作只是计算区域内存在的独立区域集，以检查是否可以执行拆分。这是一个简单的性能旋钮，允许为小区域关闭拆分逻辑，因为小区域首先不太可能被拆分。
 
-Then, any region in the create empty radius + merge radius are collected
-into a set X. This set represents the regions that need to be merged
-later to adhere to the second invariant.
+#### 最大死亡段百分比
 
-If the set X contains no elements, then a region is created in the ready
-state to own all of the created sections.
+最大死亡段百分比是区域在可以运行重新计算逻辑之前必须存在的最小死亡段百分比。
 
-If the set X contains just 1 region, then no regions need to be merged
-and no region state is modified, and the sections are added to this
-1 region.
+#### 空段创建半径
 
-Merge logic needs to occur when there are more than 1 region in the
-set X. From the set X, a region x is selected that is not ticking. If
-no such x exists, then a region x is created. Every region section 
-created is added to the set x, as it is the section that is known
-to not be ticking - this is done to adhere to invariant third invariant.
+空段创建半径变量用于确定在**任何**至少有一个区块的区域段周围存在多少个空区域段。
 
-Every region y in the set X that is not x is merged into x if
-y is not in the ticking state, otherwise x runs the merge later
-logic into y.
+在内部，区域化器通过阻止 ticking 区域拥有新的区域段来强制执行第三个不变量。在任何非空段周围创建空段将强制执行第二个不变量。
 
-### Merge later logic
+#### 区域段合并半径
 
-A merge later operation may only take place from 
-a non-ticking, non-dead region x into a ticking region y.
-The merge later logic relies on maintaining a set of regions
-to merge into later per region, and another set of regions
-that are expected to merge into this region.
-Effectively, a merge into later operation from x into y will add y into x's
-merge into later set, and add x into y's expecting merge from set.
+合并半径变量用于确保对于任何现有区域段 x，合并半径内的任何其他区域段 y 要么由拥有 x 的区域拥有，要么正在等待合并到拥有 x 的区域中，要么拥有 x 的区域正在等待合并到拥有 y 的区域中。
 
-When the ticking region finishes ticking, the ticking region 
-will perform the merge logic for all expecting merges.
+#### 区域段区块偏移
 
-### Merge logic
+区域段区块偏移只是 log2(网格大小 N)。因此，N = 1 << 区域段区块偏移。从区块位置到区域段的转换另外定义为区域坐标 = 区块坐标 >> 区域段区块偏移。
 
-A merge operation may only take place between a dead region x
-and another region y which may be either "transient" 
-or "ready." The region x is effectively absorbed into the
-region y, as the sections in x are moved to the region y.
+### 操作
 
-The merge into later is also forwarded to the region y, 
-such so that the regions x was to merge into later, y will
-now merge into later. 
+区域化器的操作是通过在创建或销毁区块持有者时调用 `ThreadedRegionizer#addChunk(x, z)` 或 `ThreadedRegionizer#removeChunk(x, z)` 来完成的。
 
-Additionally, if there is implementation specific data
-on region x, the region callback to merge the data into the
-region y is invoked.
+此外，调用者可以使用 `ThreadedRegion#tryMarkTicking` 来尝试将区域从"就绪"状态移动到"ticking"状态。至关重要的是要注意，如果区域不处于"就绪"状态，则此函数将返回 false，因为即使过去被认为"就绪"（即计划进行 ticking）的区域也可能意外地被标记为"瞬态"。因此，调用者需要处理此类情况。成功将区域标记为 ticking 的调用者必须使用 `ThreadedRegion#markNotTicking` 将其标记为非 ticking。
 
-The state of the region y may be updated after a merge operation
-completes. For example, if the region x was "transient", then
-the region y should be downgraded to transient as well. Specifically,
-the region y should be marked as transient if region x contained 
-merge later targets that were not y. The downgrading to transient is 
-required to adhere to the second invariant.
+如果区域从"ticking"状态迁移到"就绪"状态，则函数 ThreadedRegion#markNotTicking 返回 true，在所有其他情况下返回 false。实际上，它返回当前区域是否可能稍后再次进行 ticking。
 
-### Removal of chunks (`removeChunk`)
+### 区域段状态
 
-Removal of chunks from region sections simple updates
-the region sections state to "dead" or "alive", as well as the
-region sections in the empty creation radius. It will not update
-any region state, and nor will it purge region sections.
+区域段状态是"死亡"或"存活"之一。如果区域段包含至少一个区块位置，则区域段还可以被认为是"非空"的，否则为"空"。
 
-### Region tick start (`tryMarkTicking`)
+当且仅当区域段也为"空"并且在空段创建半径内不存在其他"空"段时，区域段才被认为是"死亡"的。
 
-The tick start simply migrates the state to ticking, so that
-invariants #2 and #3 can be met. 
+死亡段状态的存在纯粹是为了性能，因为它允许延迟区域的重新计算逻辑，直到区域包含足够的死亡段。但是，死亡段仍然被认为属于拥有它们的区域，就像存活段一样。
 
-### Region tick end (`markNotTicking`)
+### 添加区块 (`addChunk`)
 
-At the end of a tick, the region's new state is not immediately known.
+向区域化器添加区块归结为两种情况：
 
-First, tt first must process its pending merges. 
+#### 目标区域段已存在且非空
 
-After it processes its pending merges, it must then check if the 
-region is now pending merge into any other region. If it is, then 
-it transitions to the transient state. 
+在这种情况下，它只是将区块添加到段并返回。
 
-Otherwise, it will process the removal of dead sections and attempt 
-to split into smaller regions. Note that it is guaranteed 
-that if a region can be possibly split, it must remove dead sections,
-otherwise, this would contradict the rules used to build the region 
-in the first place.
+#### 目标区域段不存在或为空
+
+在这种情况下，如果区域段不存在，则将创建该区域段。此外，还将创建"创建空半径"中的区域段。
+
+然后，将创建空半径 + 合并半径中的任何区域收集到集合 X 中。此集合表示稍后需要合并的区域，以遵守第二个不变量。
+
+如果集合 X 不包含任何元素，则在就绪状态下创建一个区域，以拥有所有创建的段。
+
+如果集合 X 仅包含 1 个区域，则无需合并区域，并且不修改区域状态，并且这些段将添加到这 1 个区域。
+
+当集合 X 中有多个区域时，需要发生合并逻辑。从集合 X 中，选择一个非 ticking 的区域 x。如果不存在这样的 x，则创建一个区域 x。创建的每个区域段都添加到集合 x 中，因为它是已知非 ticking 的段 - 这样做是为了遵守不变量第三个不变量。
+
+集合 X 中不是 x 的每个区域 y 如果 y 不处于 ticking 状态，则合并到 x 中，否则 x 将稍后合并逻辑运行到 y 中。
+
+### 稍后合并逻辑
+
+稍后合并操作可能仅从非 ticking、非死区域 x 进入 ticking 区域 y。稍后合并逻辑依赖于维护每个区域稍后要合并到其中的区域集，以及另一组预期从该区域合并的区域集。实际上，从 x 到 y 的稍后合并操作会将 y 添加到 x 的稍后合并集中，并将 x 添加到 y 的预期合并集中。
+
+当 ticking 区域完成 ticking 时，ticking 区域将对其所有预期合并执行合并逻辑。
+
+### 合并逻辑
+
+合并操作可能仅发生在死亡区域 x 和另一个区域 y 之间，区域 y 可能是"瞬态"或"就绪"。区域 x 有效地被区域 y 吸收，因为区域 x 中的段被移动到区域 y。
+
+稍后合并也被转发到区域 y，这样区域 x 将稍后合并到的区域，现在将稍后合并到区域 y。
+
+此外，如果区域 x 上有特定于实现的数据，则会调用区域回调以将数据合并到区域 y 中。
+
+区域 y 的状态可能会在合并操作完成后更新。例如，如果区域 x 是"瞬态"，则区域 y 也应降级为瞬态。具体来说，如果区域 x 包含不是 y 的稍后合并目标，则区域 y 应标记为瞬态。降级为瞬态是遵守第二个不变量所必需的。
+
+### 移除区块 (`removeChunk`)
+
+从区域段中移除区块只是将区域段状态更新为"死亡"或"存活"，以及空创建半径中的区域段。它不会更新任何区域状态，也不会清除区域段。
+
+### 区域 tick 开始 (`tryMarkTicking`)
+
+tick 开始只是将状态迁移到 ticking，以便可以满足不变量 #2 和 #3。
+
+### 区域 tick 结束 (`markNotTicking`)
+
+在 tick 结束时，区域的新状态不是立即知道的。
+
+首先，它必须首先处理其待处理的合并。
+
+在处理完其待处理的合并后，它必须检查该区域现在是否正在等待合并到任何其他区域。如果是，则它将转换为瞬态状态。
+
+否则，它将处理死亡段的移除并尝试拆分为更小的区域。请注意，可以保证如果一个区域可以被拆分，则它必须移除死亡段，否则，这将与用于构建区域的规则相矛盾。
