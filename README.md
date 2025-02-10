@@ -1,57 +1,39 @@
-# docs [![Discord](https://img.shields.io/discord/289587909051416579.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/papermc) ![Deployment Status](https://img.shields.io/github/deployments/PaperMC/docs/production?label=deployment&logo=github) ![License](https://img.shields.io/github/license/PaperMC/docs)
+# 文档 [![Discord](https://img.shields.io/discord/289587909051416579.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/papermc)![部署状态](https://img.shields.io/github/deployments/PaperMC/docs/production?label=部署&logo=github)![许可证](https://img.shields.io/github/license/PaperMC/docs)
 
-This is the repository for all project documentation under the PaperMC umbrella. Content in this
-repository is published to [docs.papermc.io](https://docs.papermc.io) for viewing.
+这是 PaperMC 旗下所有项目文档的代码仓库。此仓库中的内容会发布到 [docs.papermc.io](https://docs.papermc.io) 以供查看。
 
-## Getting Started
+## 入门指南
 
-How to get docs running on your local machine for development.
+如何在本地机器上运行文档以便进行开发。
 
-### Prerequisites
+### 前提条件
+- [node](https://nodejs.org)
+- [pnpm](https://pnpm.io/installation)
 
--   [node](https://nodejs.org)
--   [pnpm](https://pnpm.io/installation)
-
-### Local Development
-
-1. Clone the repository. If you plan to make changes, create a fork first!
-
+### 本地开发
+1. 克隆代码仓库。如果你打算进行修改，先创建一个复刻版！
 ```bash
 $ git clone https://github.com/PaperMC/docs
 ```
-
-2. Install all required dependencies.
-
+2. 安装所有必需的依赖项。
 ```bash
 $ pnpm install
 ```
-
-3. Start the development server.
-
+3. 启动开发服务器。
 ```bash
 $ pnpm run dev
 ```
+这将启动一个本地开发服务器并打开一个浏览器窗口。大多数更改会立即实时反映出来，无需重新启动开发服务器或在浏览器中重新加载页面。尽情编辑吧！
 
-This will start a local development server and open a browser window. The majority of changes will
-be instantly reflected live without the need to restart the development server or reload the page in
-your browser. Edit away!
-
-### Building
-
+### 构建
 ```bash
 $ pnpm run build
 ```
+此命令会在 `build` 目录中构建一个适用于生产环境的部署版本。这些文件可直接托管在任何静态内容服务器上。
 
-This command builds a production-ready deployment into the `build` directory. These files are ready
-to be hosted on any static content server.
+## 许可证
+PaperMC 文档（例如 `/docs` 文件夹中的 `.md` 文件）采用 [CC - BY - SA - 4.0](https://github.com/PaperMC/docs/blob/main/LICENSE-docs) 许可证。
 
-## License
+支持代码采用 [BSD - 2 - 条款](https://github.com/PaperMC/docs/blob/main/LICENSE) 许可证。
 
-The PaperMC Documentation (e.g., `.md` files in the `/docs` folder) is
-[CC-BY-SA-4.0](https://github.com/PaperMC/docs/blob/main/LICENSE-docs) licensed.
-
-The supporting code is
-[BSD-2-Clause](https://github.com/PaperMC/docs/blob/main/LICENSE) licensed.
-
-The PaperMC logomark is subject to its [own terms](https://docs.papermc.io/misc/assets) and does not
-inherit a license from any of the projects it represents.
+PaperMC 标志受其 [自身条款](https://docs.papermc.io/misc/assets) 约束，并不继承它所代表的任何项目的许可证。
