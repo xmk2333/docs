@@ -55,3 +55,4 @@ The supporting code is
 
 The PaperMC logomark is subject to its [own terms](https://docs.papermc.io/misc/assets) and does not
 inherit a license from any of the projects it represents.
+1
